@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package sca.biwiwatchface;
 
 import android.content.BroadcastReceiver;
@@ -38,6 +37,12 @@ import android.view.WindowInsets;
 import java.lang.ref.WeakReference;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
+
+/* Emulator launch:
+telnet localhost 5554
+auth /MlEbZ6a8HZ5jilz
+redir add tcp:5601:5601
+ */
 
 /**
  * Digital watch face with seconds. In ambient mode, the seconds aren't displayed. On devices with
@@ -64,7 +69,7 @@ public class MainWatchFace extends CanvasWatchFaceService {
     }
 
     private static class EngineHandler extends Handler {
-        private final WeakReference<MainWatchFace.Engine> mWeakReference;
+        private final WeakReference<Engine> mWeakReference;
 
         public EngineHandler(MainWatchFace.Engine reference) {
             mWeakReference = new WeakReference<>(reference);
@@ -87,7 +92,7 @@ public class MainWatchFace extends CanvasWatchFaceService {
         final Handler mUpdateTimeHandler = new EngineHandler(this);
         boolean mRegisteredTimeZoneReceiver = false;
         Paint mBackgroundPaint;
-        Paint mTextPaint;
+        TimePaint mTimePaint;
         boolean mAmbient;
         Time mTime;
         final BroadcastReceiver mTimeZoneReceiver = new BroadcastReceiver() {
@@ -122,10 +127,9 @@ public class MainWatchFace extends CanvasWatchFaceService {
             mYOffset = resources.getDimension(R.dimen.digital_y_offset);
 
             mBackgroundPaint = new Paint();
-            mBackgroundPaint.setColor(resources.getColor(R.color.background));
+            mBackgroundPaint.setColor(resources.getColor(R.color.background, getTheme()));
 
-            mTextPaint = new Paint();
-            mTextPaint = createTextPaint(resources.getColor(R.color.digital_text));
+            mTimePaint = new TimePaint(MainWatchFace.this);
 
             mTime = new Time();
         }
@@ -134,14 +138,6 @@ public class MainWatchFace extends CanvasWatchFaceService {
         public void onDestroy() {
             mUpdateTimeHandler.removeMessages(MSG_UPDATE_TIME);
             super.onDestroy();
-        }
-
-        private Paint createTextPaint(int textColor) {
-            Paint paint = new Paint();
-            paint.setColor(textColor);
-            paint.setTypeface(NORMAL_TYPEFACE);
-            paint.setAntiAlias(true);
-            return paint;
         }
 
         @Override
@@ -183,16 +179,7 @@ public class MainWatchFace extends CanvasWatchFaceService {
         @Override
         public void onApplyWindowInsets(WindowInsets insets) {
             super.onApplyWindowInsets(insets);
-
-            // Load resources that have alternate values for round watches.
-            Resources resources = MainWatchFace.this.getResources();
-            boolean isRound = insets.isRound();
-            mXOffset = resources.getDimension(isRound
-                    ? R.dimen.digital_x_offset_round : R.dimen.digital_x_offset);
-            float textSize = resources.getDimension(isRound
-                    ? R.dimen.digital_text_size_round : R.dimen.digital_text_size);
-
-            mTextPaint.setTextSize(textSize);
+            mTimePaint.onApplyWindowInsets(insets);
         }
 
         @Override
@@ -213,7 +200,7 @@ public class MainWatchFace extends CanvasWatchFaceService {
             if (mAmbient != inAmbientMode) {
                 mAmbient = inAmbientMode;
                 if (mLowBitAmbient) {
-                    mTextPaint.setAntiAlias(!inAmbientMode);
+                    mTimePaint.setAntiAlias(!inAmbientMode);
                 }
                 invalidate();
             }
@@ -258,10 +245,7 @@ public class MainWatchFace extends CanvasWatchFaceService {
 
             // Draw H:MM in ambient mode or H:MM:SS in interactive mode.
             mTime.setToNow();
-            String text = mAmbient
-                    ? String.format("%d:%02d", mTime.hour, mTime.minute)
-                    : String.format("%d:%02d:%02d", mTime.hour, mTime.minute, mTime.second);
-            canvas.drawText(text, mXOffset, mYOffset, mTextPaint);
+            mTimePaint.drawTime( canvas, mTime, bounds.centerX(), bounds.centerY() );
         }
 
         /**
