@@ -1,18 +1,3 @@
-/*
- * Copyright (C) 2014 The Android Open Source Project
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package sca.biwiwatchface;
 
 import android.content.BroadcastReceiver;
@@ -91,8 +76,13 @@ public class MainWatchFace extends CanvasWatchFaceService {
     private class Engine extends CanvasWatchFaceService.Engine {
         final Handler mUpdateTimeHandler = new EngineHandler(this);
         boolean mRegisteredTimeZoneReceiver = false;
+
         Paint mBackgroundPaint;
         TimePaint mTimePaint;
+        DatePaint mDatePaint;
+        SecondPaint mSecondPaint;
+        BatteryPaint mBatteryPaint;
+
         boolean mAmbient;
         Time mTime;
         final BroadcastReceiver mTimeZoneReceiver = new BroadcastReceiver() {
@@ -103,9 +93,6 @@ public class MainWatchFace extends CanvasWatchFaceService {
             }
         };
         int mTapCount;
-
-        float mXOffset;
-        float mYOffset;
 
         /**
          * Whether the display supports fewer bits for each color in ambient mode. When true, we
@@ -124,12 +111,14 @@ public class MainWatchFace extends CanvasWatchFaceService {
                     .setAcceptsTapEvents(true)
                     .build());
             Resources resources = MainWatchFace.this.getResources();
-            mYOffset = resources.getDimension(R.dimen.digital_y_offset);
 
             mBackgroundPaint = new Paint();
             mBackgroundPaint.setColor(resources.getColor(R.color.background, getTheme()));
 
             mTimePaint = new TimePaint(MainWatchFace.this);
+            mDatePaint = new DatePaint(MainWatchFace.this);
+            mSecondPaint = new SecondPaint(MainWatchFace.this);
+            mBatteryPaint = new BatteryPaint(MainWatchFace.this);
 
             mTime = new Time();
         }
@@ -180,6 +169,9 @@ public class MainWatchFace extends CanvasWatchFaceService {
         public void onApplyWindowInsets(WindowInsets insets) {
             super.onApplyWindowInsets(insets);
             mTimePaint.onApplyWindowInsets(insets);
+            mDatePaint.onApplyWindowInsets(insets);
+            mSecondPaint.onApplyWindowInsets(insets);
+            mBatteryPaint.onApplyWindowInsets(insets);
         }
 
         @Override
@@ -200,7 +192,11 @@ public class MainWatchFace extends CanvasWatchFaceService {
             if (mAmbient != inAmbientMode) {
                 mAmbient = inAmbientMode;
                 if (mLowBitAmbient) {
-                    mTimePaint.setAntiAlias(!inAmbientMode);
+                    boolean antiAlias =  ! inAmbientMode;
+                    mTimePaint.setAntiAlias(antiAlias);
+                    mDatePaint.setAntiAlias(antiAlias);
+                    mSecondPaint.setAntiAlias(antiAlias);
+                    mBatteryPaint.setAntiAlias(antiAlias);
                 }
                 invalidate();
             }
@@ -245,7 +241,12 @@ public class MainWatchFace extends CanvasWatchFaceService {
 
             // Draw H:MM in ambient mode or H:MM:SS in interactive mode.
             mTime.setToNow();
-            mTimePaint.drawTime( canvas, mTime, bounds.centerX(), bounds.centerY() );
+            mTimePaint.drawTime( canvas, mTime, bounds.centerX(), bounds.centerY(), mAmbient );
+            if (!mAmbient) {
+                mDatePaint.drawTime(canvas, mTime, bounds.centerX(), bounds.centerY() - 80);
+                mSecondPaint.drawTime( canvas, mTime, bounds.right - 30, bounds.centerY() + 60 );
+                mBatteryPaint.draw( canvas, bounds.left + 30, bounds.centerY() + 60 );
+            }
         }
 
         /**
