@@ -1,7 +1,6 @@
 package sca.biwiwatchface;
 
 import android.content.Context;
-import android.content.res.Resources;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Rect;
@@ -11,11 +10,9 @@ import android.view.WindowInsets;
 
 import java.util.Locale;
 
-public class TimePaint {
+public class TimeFaceElement extends AbstractFaceElement {
     private static final String COLON_STRING = ":";
     private static final String DIGIT_STRING = "00";
-
-    private Context mContext;
 
     private Paint mHourPaint;
     private Paint mMinutePaint;
@@ -25,11 +22,9 @@ public class TimePaint {
     private float mColonHalfHeight;
     private float mDigitHalfHeight;
 
-    public TimePaint(Context context) {
-        mContext = context;
-        Resources resources = mContext.getResources();
-        Resources.Theme theme = mContext.getTheme();
-        int textColor = resources.getColor(R.color.digital_time, theme );
+    public TimeFaceElement( Context context) {
+        super (context);
+        int textColor = getColor(R.color.digital_time );
         Typeface typefaceMedium = Typeface.create("sans-serif-medium", Typeface.NORMAL);
 
         mHourPaint = new Paint();
@@ -52,9 +47,8 @@ public class TimePaint {
     }
 
     public void onApplyWindowInsets(WindowInsets insets) {
-        Resources resources = mContext.getResources();
         boolean isRound = insets.isRound();
-        float textSize = resources.getDimension(isRound ? R.dimen.digital_time_size_round : R.dimen.digital_time_size);
+        float textSize = getDimension(isRound ? R.dimen.digital_time_size_round : R.dimen.digital_time_size);
         mHourPaint.setTextSize(textSize);
         mMinutePaint.setTextSize(textSize);
         mColonPaint.setTextSize(textSize);
@@ -74,7 +68,7 @@ public class TimePaint {
         mColonPaint.setAntiAlias(enabled);
     }
 
-    public void drawTime(Canvas canvas, Time time, int x, int y, boolean ambient) {
+    public void drawTime(Canvas canvas, Time time, int x, int y) {
         String szHour = Integer.toString(time.hour);
         String szMinute = String.format(Locale.US, "%02d", time.minute);
 
@@ -85,7 +79,7 @@ public class TimePaint {
         float yDigit = y + mDigitHalfHeight;
 
         canvas.drawText( szHour, xColonPos - mColonHalfWidth, yDigit, mHourPaint );
-        if ( ambient || time.second % 2 == 0 ) {
+        if ( isInAmbientMode() || time.second % 2 == 0 ) {
             canvas.drawText(COLON_STRING, xColonPos, y + mColonHalfHeight, mColonPaint);
         }
 

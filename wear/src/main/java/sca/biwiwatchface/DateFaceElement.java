@@ -1,7 +1,6 @@
 package sca.biwiwatchface;
 
 import android.content.Context;
-import android.content.res.Resources;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Rect;
@@ -9,21 +8,17 @@ import android.graphics.Typeface;
 import android.text.format.Time;
 import android.view.WindowInsets;
 
-public class DatePaint {
+public class DateFaceElement extends AbstractFaceElement {
 
     private static final String MEASURE_STRING = "Lj";
-
-    private Context mContext;
 
     private Paint mDatePaint;
 
     private float mDateHalfHeight;
 
-    public DatePaint(Context context) {
-        mContext = context;
-        Resources resources = mContext.getResources();
-        Resources.Theme theme = mContext.getTheme();
-        int textColor = resources.getColor(R.color.date, theme );
+    public DateFaceElement( Context context) {
+        super( context );
+        int textColor = getColor(R.color.date);
         Typeface typefaceMedium = Typeface.create("sans-serif-medium", Typeface.NORMAL);
 
         mDatePaint = new Paint();
@@ -39,9 +34,8 @@ public class DatePaint {
     }
 
     public void onApplyWindowInsets(WindowInsets insets) {
-        Resources resources = mContext.getResources();
         boolean isRound = insets.isRound();
-        float textSize = resources.getDimension(isRound ? R.dimen.digital_date_size_round : R.dimen.digital_date_size);
+        float textSize = getDimension(isRound ? R.dimen.digital_date_size_round : R.dimen.digital_date_size);
         mDatePaint.setTextSize(textSize);
 
         Rect rcBounds = new Rect();
@@ -50,8 +44,10 @@ public class DatePaint {
     }
 
     public void drawTime(Canvas canvas, Time time, int x, int y) {
-        String szDate = time.format("%a %d %b");
-        canvas.drawText( szDate, x, y + mDateHalfHeight, mDatePaint );
+        if (isInInteractiveMode()) {
+            String szDate = time.format("%a %d %b");
+            canvas.drawText( szDate, x, y + mDateHalfHeight, mDatePaint );
+        }
     }
 
 }

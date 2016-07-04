@@ -9,7 +9,6 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
-import android.graphics.Typeface;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -20,13 +19,18 @@ import android.view.SurfaceHolder;
 import android.view.WindowInsets;
 
 import java.lang.ref.WeakReference;
+import java.util.Arrays;
+import java.util.List;
 import java.util.TimeZone;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 /* Emulator launch:
 telnet localhost 5554
 auth /MlEbZ6a8HZ5jilz
 redir add tcp:5601:5601
+
  */
 
 /**
@@ -34,9 +38,6 @@ redir add tcp:5601:5601
  * low-bit ambient mode, the text is drawn without anti-aliasing in ambient mode.
  */
 public class MainWatchFace extends CanvasWatchFaceService {
-    private static final Typeface NORMAL_TYPEFACE =
-            Typeface.create(Typeface.SANS_SERIF, Typeface.NORMAL);
-
     /**
      * Update rate in milliseconds for interactive mode. We update once a second since seconds are
      * displayed in interactive mode.
@@ -78,10 +79,13 @@ public class MainWatchFace extends CanvasWatchFaceService {
         boolean mRegisteredTimeZoneReceiver = false;
 
         Paint mBackgroundPaint;
-        TimePaint mTimePaint;
-        DatePaint mDatePaint;
-        SecondPaint mSecondPaint;
-        BatteryPaint mBatteryPaint;
+        List<AbstractFaceElement> mLstFaceElement;
+        TimeFaceElement mTimePaint;
+        DateFaceElement mDatePaint;
+        SecondFaceElement mSecondPaint;
+        BatteryFaceElement mBatteryPaint;
+
+        private ScheduledExecutorService mExecutorService;
 
         boolean mAmbient;
         Time mTime;
@@ -115,10 +119,13 @@ public class MainWatchFace extends CanvasWatchFaceService {
             mBackgroundPaint = new Paint();
             mBackgroundPaint.setColor(resources.getColor(R.color.background, getTheme()));
 
-            mTimePaint = new TimePaint(MainWatchFace.this);
-            mDatePaint = new DatePaint(MainWatchFace.this);
-            mSecondPaint = new SecondPaint(MainWatchFace.this);
-            mBatteryPaint = new BatteryPaint(MainWatchFace.this);
+            Context context = MainWatchFace.this;
+            mLstFaceElement = Arrays.asList(
+                    mTimePaint = new TimeFaceElement( context ),
+                    mSecondPaint = new SecondFaceElement( context ),
+                    mDatePaint = new DateFaceElement( context ),
+                    mBatteryPaint = new BatteryFaceElement( context )
+            );
 
             mTime = new Time();
         }
@@ -135,11 +142,13 @@ public class MainWatchFace extends CanvasWatchFaceService {
 
             if (visible) {
                 registerReceiver();
+                startExecutorService();
 
                 // Update time zone in case it changed while we weren't visible.
                 mTime.clear(TimeZone.getDefault().getID());
                 mTime.setToNow();
             } else {
+                stopExecutorService();
                 unregisterReceiver();
             }
 
@@ -168,10 +177,10 @@ public class MainWatchFace extends CanvasWatchFaceService {
         @Override
         public void onApplyWindowInsets(WindowInsets insets) {
             super.onApplyWindowInsets(insets);
-            mTimePaint.onApplyWindowInsets(insets);
-            mDatePaint.onApplyWindowInsets(insets);
-            mSecondPaint.onApplyWindowInsets(insets);
-            mBatteryPaint.onApplyWindowInsets(insets);
+
+            for (AbstractFaceElement element : mLstFaceElement) {
+                element.onApplyWindowInsets( insets );
+            }
         }
 
         @Override
@@ -191,12 +200,8 @@ public class MainWatchFace extends CanvasWatchFaceService {
             super.onAmbientModeChanged(inAmbientMode);
             if (mAmbient != inAmbientMode) {
                 mAmbient = inAmbientMode;
-                if (mLowBitAmbient) {
-                    boolean antiAlias =  ! inAmbientMode;
-                    mTimePaint.setAntiAlias(antiAlias);
-                    mDatePaint.setAntiAlias(antiAlias);
-                    mSecondPaint.setAntiAlias(antiAlias);
-                    mBatteryPaint.setAntiAlias(antiAlias);
+                for (AbstractFaceElement element : mLstFaceElement) {
+                    element.onAmbientModeChanged( mAmbient, mLowBitAmbient );
                 }
                 invalidate();
             }
@@ -239,13 +244,12 @@ public class MainWatchFace extends CanvasWatchFaceService {
                 canvas.drawRect(0, 0, bounds.width(), bounds.height(), mBackgroundPaint);
             }
 
-            // Draw H:MM in ambient mode or H:MM:SS in interactive mode.
             mTime.setToNow();
-            mTimePaint.drawTime( canvas, mTime, bounds.centerX(), bounds.centerY(), mAmbient );
+            mTimePaint.drawTime( canvas, mTime, bounds.centerX(), bounds.centerY() );
             if (!mAmbient) {
                 mDatePaint.drawTime(canvas, mTime, bounds.centerX(), bounds.centerY() - 80);
                 mSecondPaint.drawTime( canvas, mTime, bounds.right - 30, bounds.centerY() + 60 );
-                mBatteryPaint.draw( canvas, bounds.left + 30, bounds.centerY() + 60 );
+                mBatteryPaint.drawTime( canvas, mTime, bounds.left + 30, bounds.centerY() + 60 );
             }
         }
 
@@ -280,5 +284,22 @@ public class MainWatchFace extends CanvasWatchFaceService {
                 mUpdateTimeHandler.sendEmptyMessageDelayed(MSG_UPDATE_TIME, delayMs);
             }
         }
+
+        private void startExecutorService() {
+            if (null == mExecutorService) {
+                mExecutorService = Executors.newScheduledThreadPool( 2 );
+                for (AbstractFaceElement element : mLstFaceElement) {
+                    element.startExecutorService( mExecutorService );
+                }
+            }
+        }
+
+        private void stopExecutorService() {
+            if (null != mExecutorService) {
+                mExecutorService.shutdownNow();
+                mExecutorService = null;
+            }
+        }
+
     }
 }
