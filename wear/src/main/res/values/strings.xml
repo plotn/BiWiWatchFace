@@ -1,4 +1,6 @@
 <resources>
     <string name="app_name">BiWi Watch Face</string>
     <string name="biwi">BiWi</string>
+    <string name="today">Tod:</string>
+    <string name="tomorrow">Tom:</string>
 </resources>

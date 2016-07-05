@@ -13,6 +13,7 @@ import android.graphics.Rect;
 import android.graphics.Typeface;
 import android.os.BatteryManager;
 import android.text.format.Time;
+import android.util.Log;
 import android.view.WindowInsets;
 
 import java.util.Locale;
@@ -108,18 +109,22 @@ public class BatteryFaceElement extends AbstractFaceElement {
             mContext = context;
         }
 
-        public void startExecutorService( ScheduledExecutorService executorService ) {
-            executorService.scheduleWithFixedDelay( mBatteryRunnable, 0, 10, TimeUnit.SECONDS );
-        }
-
-
         public int getBatteryPct() {
             return mBatteryPct.get();
         }
 
+        public void startExecutorService( ScheduledExecutorService executorService ) {
+            if (isInInteractiveMode()) {
+                executorService.scheduleWithFixedDelay( mBatteryRunnable, 0, 10, TimeUnit.SECONDS );
+            }
+        }
+
         private class BatteryRunnable implements Runnable {
+            private final String LOG_TAG = BatteryRunnable.class.getSimpleName();
+
             @Override
             public void run() {
+                Log.d( LOG_TAG, "run" );
                 Intent batteryStatus = mContext.registerReceiver( null, mBatteryIntentFilter );
                 int level = batteryStatus.getIntExtra( BatteryManager.EXTRA_LEVEL, -1 );
                 int scale = batteryStatus.getIntExtra( BatteryManager.EXTRA_SCALE, -1 );

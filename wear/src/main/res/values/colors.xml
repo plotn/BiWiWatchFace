@@ -6,4 +6,5 @@
     <color name="date">#dddddd</color>
     <color name="second">#dddddd</color>
     <color name="battery">#999999</color>
+    <color name="calendar">#dddddd</color>
 </resources>

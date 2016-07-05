@@ -21,6 +21,7 @@ public abstract class AbstractFaceElement {
     }
 
     public void startExecutorService( ScheduledExecutorService executorService ) {}
+    public void stopExecutorService( ) {}
 
     public Context getContext() { return mContext; }
 
@@ -41,6 +42,9 @@ public abstract class AbstractFaceElement {
         if (lowBitAmbient) {
             setAntiAlias( ! inAmbientMode );
         }
+    }
+
+    public void onVisibilityChanged(boolean visible) {
     }
 
     public boolean isInAmbientMode() { return mInAmbientMode; }

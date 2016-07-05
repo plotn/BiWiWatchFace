@@ -15,6 +15,7 @@ import android.os.Message;
 import android.support.wearable.watchface.CanvasWatchFaceService;
 import android.support.wearable.watchface.WatchFaceStyle;
 import android.text.format.Time;
+import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.WindowInsets;
 
@@ -75,6 +76,8 @@ public class MainWatchFace extends CanvasWatchFaceService {
     }
 
     private class Engine extends CanvasWatchFaceService.Engine {
+        private final String LOG_TAG = Engine.class.getSimpleName();
+
         final Handler mUpdateTimeHandler = new EngineHandler(this);
         boolean mRegisteredTimeZoneReceiver = false;
 
@@ -84,6 +87,7 @@ public class MainWatchFace extends CanvasWatchFaceService {
         DateFaceElement mDatePaint;
         SecondFaceElement mSecondPaint;
         BatteryFaceElement mBatteryPaint;
+        CalendarFaceElement mCalendarPaint;
 
         private ScheduledExecutorService mExecutorService;
 
@@ -106,6 +110,7 @@ public class MainWatchFace extends CanvasWatchFaceService {
 
         @Override
         public void onCreate(SurfaceHolder holder) {
+            Log.d( LOG_TAG, "onCreate" );
             super.onCreate(holder);
 
             setWatchFaceStyle(new WatchFaceStyle.Builder(MainWatchFace.this)
@@ -124,7 +129,8 @@ public class MainWatchFace extends CanvasWatchFaceService {
                     mTimePaint = new TimeFaceElement( context ),
                     mSecondPaint = new SecondFaceElement( context ),
                     mDatePaint = new DateFaceElement( context ),
-                    mBatteryPaint = new BatteryFaceElement( context )
+                    mBatteryPaint = new BatteryFaceElement( context ),
+                    mCalendarPaint = new CalendarFaceElement( context )
             );
 
             mTime = new Time();
@@ -132,12 +138,15 @@ public class MainWatchFace extends CanvasWatchFaceService {
 
         @Override
         public void onDestroy() {
+            Log.d( LOG_TAG, "onDestroy" );
             mUpdateTimeHandler.removeMessages(MSG_UPDATE_TIME);
+            stopExecutorService();
             super.onDestroy();
         }
 
         @Override
         public void onVisibilityChanged(boolean visible) {
+            Log.d( LOG_TAG, "onVisibilityChanged " + visible );
             super.onVisibilityChanged(visible);
 
             if (visible) {
@@ -150,6 +159,10 @@ public class MainWatchFace extends CanvasWatchFaceService {
             } else {
                 stopExecutorService();
                 unregisterReceiver();
+            }
+
+            for (AbstractFaceElement element : mLstFaceElement) {
+                element.onVisibilityChanged( visible );
             }
 
             // Whether the timer should be running depends on whether we're visible (as well as
@@ -176,6 +189,7 @@ public class MainWatchFace extends CanvasWatchFaceService {
 
         @Override
         public void onApplyWindowInsets(WindowInsets insets) {
+            Log.d( LOG_TAG, "onApplyWindowInsets");
             super.onApplyWindowInsets(insets);
 
             for (AbstractFaceElement element : mLstFaceElement) {
@@ -185,6 +199,7 @@ public class MainWatchFace extends CanvasWatchFaceService {
 
         @Override
         public void onPropertiesChanged(Bundle properties) {
+            Log.d( LOG_TAG, "onPropertiesChanged");
             super.onPropertiesChanged(properties);
             mLowBitAmbient = properties.getBoolean(PROPERTY_LOW_BIT_AMBIENT, false);
         }
@@ -197,12 +212,15 @@ public class MainWatchFace extends CanvasWatchFaceService {
 
         @Override
         public void onAmbientModeChanged(boolean inAmbientMode) {
+            Log.d( LOG_TAG, "onAmbientModeChanged " + inAmbientMode);
             super.onAmbientModeChanged(inAmbientMode);
             if (mAmbient != inAmbientMode) {
                 mAmbient = inAmbientMode;
                 for (AbstractFaceElement element : mLstFaceElement) {
                     element.onAmbientModeChanged( mAmbient, mLowBitAmbient );
                 }
+                stopExecutorService();
+                startExecutorService();
                 invalidate();
             }
 
@@ -228,8 +246,8 @@ public class MainWatchFace extends CanvasWatchFaceService {
                 case TAP_TYPE_TAP:
                     // The user has completed the tap gesture.
                     mTapCount++;
-                    mBackgroundPaint.setColor(resources.getColor(mTapCount % 2 == 0 ?
-                            R.color.background : R.color.background2));
+                    //mBackgroundPaint.setColor(resources.getColor(mTapCount % 2 == 0 ?
+                    //        R.color.background : R.color.background2));
                     break;
             }
             invalidate();
@@ -237,6 +255,7 @@ public class MainWatchFace extends CanvasWatchFaceService {
 
         @Override
         public void onDraw(Canvas canvas, Rect bounds) {
+            Log.d( LOG_TAG, "onDraw");
             // Draw the background.
             if (isInAmbientMode()) {
                 canvas.drawColor(Color.BLACK);
@@ -250,6 +269,7 @@ public class MainWatchFace extends CanvasWatchFaceService {
                 mDatePaint.drawTime(canvas, mTime, bounds.centerX(), bounds.centerY() - 80);
                 mSecondPaint.drawTime( canvas, mTime, bounds.right - 30, bounds.centerY() + 60 );
                 mBatteryPaint.drawTime( canvas, mTime, bounds.left + 30, bounds.centerY() + 60 );
+                mCalendarPaint.drawTime( canvas, mTime, bounds.centerX(), bounds.centerY() + 80 );
             }
         }
 
@@ -287,7 +307,7 @@ public class MainWatchFace extends CanvasWatchFaceService {
 
         private void startExecutorService() {
             if (null == mExecutorService) {
-                mExecutorService = Executors.newScheduledThreadPool( 2 );
+                mExecutorService = Executors.newSingleThreadScheduledExecutor();
                 for (AbstractFaceElement element : mLstFaceElement) {
                     element.startExecutorService( mExecutorService );
                 }
@@ -298,6 +318,9 @@ public class MainWatchFace extends CanvasWatchFaceService {
             if (null != mExecutorService) {
                 mExecutorService.shutdownNow();
                 mExecutorService = null;
+                for (AbstractFaceElement element : mLstFaceElement) {
+                    element.stopExecutorService();
+                }
             }
         }
 
