@@ -5,9 +5,9 @@ import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
-import android.text.format.Time;
 import android.view.WindowInsets;
 
+import java.util.Calendar;
 import java.util.concurrent.ScheduledExecutorService;
 
 public abstract class AbstractFaceElement {
@@ -55,7 +55,7 @@ public abstract class AbstractFaceElement {
 
     public abstract void onApplyWindowInsets(WindowInsets insets);
 
-    public abstract void drawTime(Canvas canvas, Time time, int x, int y);
+    public abstract void drawTime( Canvas canvas, Calendar calendar, int x, int y);
 
 
 }

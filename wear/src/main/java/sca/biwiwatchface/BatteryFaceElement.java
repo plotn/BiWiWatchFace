@@ -12,10 +12,10 @@ import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.Typeface;
 import android.os.BatteryManager;
-import android.text.format.Time;
 import android.util.Log;
 import android.view.WindowInsets;
 
+import java.util.Calendar;
 import java.util.Locale;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -90,7 +90,7 @@ public class BatteryFaceElement extends AbstractFaceElement {
         mScaledBitmap = Bitmap.createScaledBitmap( bitmap, mScaledBmpWidth, mScaledBmpHeight, false);
     }
 
-    public void drawTime( Canvas canvas, Time time, int x, int y) {
+    public void drawTime( Canvas canvas, Calendar calendar, int x, int y) {
         if (isInInteractiveMode()) {
             canvas.drawBitmap( mScaledBitmap, x, y - mScaledBmpHeight / 2, mBitmapPaint );
 
@@ -126,9 +126,11 @@ public class BatteryFaceElement extends AbstractFaceElement {
             public void run() {
                 Log.d( LOG_TAG, "run" );
                 Intent batteryStatus = mContext.registerReceiver( null, mBatteryIntentFilter );
-                int level = batteryStatus.getIntExtra( BatteryManager.EXTRA_LEVEL, -1 );
-                int scale = batteryStatus.getIntExtra( BatteryManager.EXTRA_SCALE, -1 );
-                mBatteryPct.set( Math.round( 100 * level / (float) scale ) );
+                if (batteryStatus != null) {
+                    int level = batteryStatus.getIntExtra( BatteryManager.EXTRA_LEVEL, -1 );
+                    int scale = batteryStatus.getIntExtra( BatteryManager.EXTRA_SCALE, -1 );
+                    mBatteryPct.set( Math.round( 100 * level / (float) scale ) );
+                }
             }
         }
 

@@ -14,13 +14,13 @@ import android.os.Handler;
 import android.os.Message;
 import android.support.wearable.watchface.CanvasWatchFaceService;
 import android.support.wearable.watchface.WatchFaceStyle;
-import android.text.format.Time;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.WindowInsets;
 
 import java.lang.ref.WeakReference;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.List;
 import java.util.TimeZone;
 import java.util.concurrent.Executors;
@@ -87,17 +87,17 @@ public class MainWatchFace extends CanvasWatchFaceService {
         DateFaceElement mDatePaint;
         SecondFaceElement mSecondPaint;
         BatteryFaceElement mBatteryPaint;
-        CalendarFaceElement mCalendarPaint;
+        MeetingFaceElement mCalendarPaint;
 
         private ScheduledExecutorService mExecutorService;
 
         boolean mAmbient;
-        Time mTime;
+        private Calendar mCalendar;
+
         final BroadcastReceiver mTimeZoneReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-                mTime.clear(intent.getStringExtra("time-zone"));
-                mTime.setToNow();
+                mCalendar.setTimeZone(TimeZone.getDefault());
             }
         };
         int mTapCount;
@@ -130,10 +130,10 @@ public class MainWatchFace extends CanvasWatchFaceService {
                     mSecondPaint = new SecondFaceElement( context ),
                     mDatePaint = new DateFaceElement( context ),
                     mBatteryPaint = new BatteryFaceElement( context ),
-                    mCalendarPaint = new CalendarFaceElement( context )
+                    mCalendarPaint = new MeetingFaceElement( context )
             );
 
-            mTime = new Time();
+            mCalendar = Calendar.getInstance();
         }
 
         @Override
@@ -154,8 +154,7 @@ public class MainWatchFace extends CanvasWatchFaceService {
                 startExecutorService();
 
                 // Update time zone in case it changed while we weren't visible.
-                mTime.clear(TimeZone.getDefault().getID());
-                mTime.setToNow();
+                mCalendar.setTimeZone(TimeZone.getDefault());
             } else {
                 stopExecutorService();
                 unregisterReceiver();
@@ -263,13 +262,14 @@ public class MainWatchFace extends CanvasWatchFaceService {
                 canvas.drawRect(0, 0, bounds.width(), bounds.height(), mBackgroundPaint);
             }
 
-            mTime.setToNow();
-            mTimePaint.drawTime( canvas, mTime, bounds.centerX(), bounds.centerY() );
+            long now = System.currentTimeMillis();
+            mCalendar.setTimeInMillis(now);
+            mTimePaint.drawTime( canvas, mCalendar, bounds.centerX(), bounds.centerY() );
             if (!mAmbient) {
-                mDatePaint.drawTime(canvas, mTime, bounds.centerX(), bounds.centerY() - 80);
-                mSecondPaint.drawTime( canvas, mTime, bounds.right - 30, bounds.centerY() + 60 );
-                mBatteryPaint.drawTime( canvas, mTime, bounds.left + 30, bounds.centerY() + 60 );
-                mCalendarPaint.drawTime( canvas, mTime, bounds.centerX(), bounds.centerY() + 80 );
+                mDatePaint.drawTime(canvas, mCalendar, bounds.centerX(), bounds.centerY() - 80);
+                mSecondPaint.drawTime( canvas, mCalendar, bounds.right - 30, bounds.centerY() + 60 );
+                mBatteryPaint.drawTime( canvas, mCalendar, bounds.left + 30, bounds.centerY() + 60 );
+                mCalendarPaint.drawTime( canvas, mCalendar, bounds.centerX(), bounds.centerY() + 80 );
             }
         }
 

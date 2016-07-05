@@ -5,14 +5,19 @@ import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.Typeface;
-import android.text.format.Time;
 import android.view.WindowInsets;
+
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Locale;
 
 public class DateFaceElement extends AbstractFaceElement {
 
     private static final String MEASURE_STRING = "Lj";
 
     private Paint mDatePaint;
+    private DateFormat mDateFormat = new SimpleDateFormat("EEE d MMM", Locale.getDefault());
 
     private float mDateHalfHeight;
 
@@ -43,9 +48,9 @@ public class DateFaceElement extends AbstractFaceElement {
         mDateHalfHeight = rcBounds.height() / 2.0f;
     }
 
-    public void drawTime(Canvas canvas, Time time, int x, int y) {
+    public void drawTime( Canvas canvas, Calendar calendar, int x, int y) {
         if (isInInteractiveMode()) {
-            String szDate = time.format("%a %d %b");
+            String szDate = mDateFormat.format(calendar.getTime());
             canvas.drawText( szDate, x, y + mDateHalfHeight, mDatePaint );
         }
     }

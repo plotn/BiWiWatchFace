@@ -22,18 +22,19 @@ import android.text.Layout;
 import android.text.SpannableStringBuilder;
 import android.text.TextPaint;
 import android.text.format.DateUtils;
-import android.text.format.Time;
 import android.util.Log;
 import android.view.WindowInsets;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
+import java.util.Locale;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
-public class CalendarFaceElement extends AbstractFaceElement {
+public class MeetingFaceElement extends AbstractFaceElement {
 
     final TextPaint mCalendarPaint;
     String mLastValue = "";
@@ -41,7 +42,7 @@ public class CalendarFaceElement extends AbstractFaceElement {
     DynamicLayout mLayout;
     MeetingInfo mMeetingInfo;
 
-    public CalendarFaceElement( Context context ) {
+    public MeetingFaceElement( Context context ) {
         super( context );
 
         int textColor = getColor( R.color.calendar );
@@ -70,7 +71,7 @@ public class CalendarFaceElement extends AbstractFaceElement {
     }
 
     @Override
-    public void drawTime( Canvas canvas, Time time, int x, int y ) {
+    public void drawTime( Canvas canvas, Calendar calendar, int x, int y ) {
         String currentValue = mMeetingInfo.getMeetingHtml();
 
         if (!currentValue.equals( mLastValue )) {
@@ -155,6 +156,7 @@ public class CalendarFaceElement extends AbstractFaceElement {
             private Context mContext;
             private AtomicReference<String> mMeetingHtml;
 
+            private DateFormat mTimeFormat = new SimpleDateFormat("H:mm", Locale.getDefault());
             private PowerManager.WakeLock mWakeLock;
 
             private static final String[] PROJECTION = {
@@ -174,7 +176,7 @@ public class CalendarFaceElement extends AbstractFaceElement {
             @Override
             public void run() {
                 Log.d( LOG_TAG, "run" );
-                PowerManager powerManager = (PowerManager) mContext.getSystemService(mContext.POWER_SERVICE);
+                PowerManager powerManager = (PowerManager) mContext.getSystemService(Context.POWER_SERVICE);
                 PowerManager.WakeLock wakeLock = powerManager.newWakeLock( PowerManager.PARTIAL_WAKE_LOCK, "CalendarWatchFaceWakeLock");
                 wakeLock.acquire();
 
@@ -186,23 +188,24 @@ public class CalendarFaceElement extends AbstractFaceElement {
 
                 final Cursor cursor = mContext.getContentResolver().query( calendarUri, PROJECTION, null, null, null );
 
-                StringBuilder sb = new StringBuilder();
-                while (cursor.moveToNext()) {
-                    String instanceTitle = cursor.getString( COL_INSTANCE_TITLE );
-                    boolean isAllDay = cursor.getInt( COL_INSTANCE_ALL_DAY ) == 1;
-                    long instanceBegin = cursor.getLong( COL_INSTANCE_BEGIN );
-                    if (isAllDay) {
-                        int idPrefixString = instanceBegin > now ? R.string.tomorrow : R.string.today;
-                        sb.append( String.format( "<b>%s</b> %s<br/>", mContext.getString( idPrefixString ), instanceTitle ) );
-                    } else {
-                        Date startDate = new Date(instanceBegin);
-                        DateFormat timeFormat = new SimpleDateFormat("H:mm");
-                        sb.append( String.format("<b>%s:</b> %s<br/>", timeFormat.format(startDate), instanceTitle ) );
+                if (cursor != null) {
+                    StringBuilder sb = new StringBuilder();
+                    while ( cursor.moveToNext() ) {
+                        String instanceTitle = cursor.getString( COL_INSTANCE_TITLE );
+                        boolean isAllDay = cursor.getInt( COL_INSTANCE_ALL_DAY ) == 1;
+                        long instanceBegin = cursor.getLong( COL_INSTANCE_BEGIN );
+                        if ( isAllDay ) {
+                            int idPrefixString = instanceBegin > now ? R.string.tomorrow : R.string.today;
+                            sb.append( String.format( "<b>%s</b> %s<br/>", mContext.getString( idPrefixString ), instanceTitle ) );
+                        } else {
+                            Date startDate = new Date( instanceBegin );
+                            sb.append( String.format( "<b>%s</b> %s<br/>", mTimeFormat.format( startDate ), instanceTitle ) );
+                        }
                     }
-                }
-                cursor.close();
+                    cursor.close();
 
-                mMeetingHtml.set( sb.toString() );
+                    mMeetingHtml.set( sb.toString() );
+                }
 
                 wakeLock.release();
             }

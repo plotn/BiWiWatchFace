@@ -5,9 +5,9 @@ import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.Typeface;
-import android.text.format.Time;
 import android.view.WindowInsets;
 
+import java.util.Calendar;
 import java.util.Locale;
 
 public class TimeFaceElement extends AbstractFaceElement {
@@ -46,6 +46,7 @@ public class TimeFaceElement extends AbstractFaceElement {
         setAntiAlias(true);
     }
 
+    @Override
     public void onApplyWindowInsets(WindowInsets insets) {
         boolean isRound = insets.isRound();
         float textSize = getDimension(isRound ? R.dimen.digital_time_size_round : R.dimen.digital_time_size);
@@ -62,15 +63,17 @@ public class TimeFaceElement extends AbstractFaceElement {
         mDigitHalfHeight = rcBounds.height() / 2.0f;
     }
 
+    @Override
     public void setAntiAlias(boolean enabled) {
         mHourPaint.setAntiAlias(enabled);
         mMinutePaint.setAntiAlias(enabled);
         mColonPaint.setAntiAlias(enabled);
     }
 
-    public void drawTime(Canvas canvas, Time time, int x, int y) {
-        String szHour = Integer.toString(time.hour);
-        String szMinute = String.format(Locale.US, "%02d", time.minute);
+    @Override
+    public void drawTime( Canvas canvas, Calendar calendar, int x, int y) {
+        String szHour = Integer.toString( calendar.get(Calendar.HOUR) );
+        String szMinute = String.format(Locale.US, "%02d", calendar.get(Calendar.MINUTE) );
 
         float hourWidth = mHourPaint.measureText(szHour);
         float minuteWidth = mMinutePaint.measureText(szMinute);
@@ -79,7 +82,7 @@ public class TimeFaceElement extends AbstractFaceElement {
         float yDigit = y + mDigitHalfHeight;
 
         canvas.drawText( szHour, xColonPos - mColonHalfWidth, yDigit, mHourPaint );
-        if ( isInAmbientMode() || time.second % 2 == 0 ) {
+        if ( isInAmbientMode() || calendar.get(Calendar.SECOND) % 2 == 0 ) {
             canvas.drawText(COLON_STRING, xColonPos, y + mColonHalfHeight, mColonPaint);
         }
 
