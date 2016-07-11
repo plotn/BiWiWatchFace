@@ -98,7 +98,7 @@ public class MeetingFaceElement extends AbstractFaceElement {
             for (Meeting meeting : currentValue) {
                 String begin = meeting.mBeginDate;
                 int dateWidth = getTextWidth( mDatePaint, begin+"x" );
-                int xBoundLeft = boundComputer.getLeftSide( currentY );
+                int xBoundLeft = boundComputer.getLeftSide( currentY + (int)(mLineHeigth/2) );
                 mlstPositionedMeetings.add( new PositionedMeeting( meeting, xBoundLeft, xBoundLeft+dateWidth, currentY ) );
                 currentY += mLineHeigth;
             }
