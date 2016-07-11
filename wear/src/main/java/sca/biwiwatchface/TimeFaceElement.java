@@ -48,8 +48,7 @@ public class TimeFaceElement extends AbstractFaceElement {
 
     @Override
     public void onApplyWindowInsets(WindowInsets insets) {
-        boolean isRound = insets.isRound();
-        float textSize = getDimension(isRound ? R.dimen.digital_time_size_round : R.dimen.digital_time_size);
+        float textSize = getDimension(R.dimen.digital_time_size);
         mHourPaint.setTextSize(textSize);
         mMinutePaint.setTextSize(textSize);
         mColonPaint.setTextSize(textSize);

@@ -13,6 +13,11 @@ public class ProductionRectWrapper implements RectWrapper {
     public int left() { return mRect.left; }
 
     @Override
+    public int bottom() {
+        return mRect.bottom;
+    }
+
+    @Override
     public int width() { return mRect.width(); }
 
     @Override

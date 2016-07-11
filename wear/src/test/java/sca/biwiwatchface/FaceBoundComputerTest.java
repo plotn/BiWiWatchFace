@@ -26,6 +26,9 @@ class FakeRect implements RectWrapper {
     }
 
     @Override
+    public int bottom() { return bottom; }
+
+    @Override
     public int width() {
         return right-left;
     }
@@ -50,7 +53,7 @@ public class FaceBoundComputerTest {
     public void should_compute_left_side_of_round_watch() throws Exception {
         RectWrapper bounds = new FakeRect(0, 0, 100, 100);
         FaceBoundComputer l = new FaceBoundComputer();
-        l.setDimensions( bounds, true );
+        l.setDimensions( bounds, true, 0 );
         assertEquals(50, l.getLeftSide( 0 ));
         assertEquals(0, l.getLeftSide( 50 ));
         assertEquals(50, l.getLeftSide( 100 ));

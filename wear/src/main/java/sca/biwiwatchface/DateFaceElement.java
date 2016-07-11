@@ -39,8 +39,7 @@ public class DateFaceElement extends AbstractFaceElement {
     }
 
     public void onApplyWindowInsets(WindowInsets insets) {
-        boolean isRound = insets.isRound();
-        float textSize = getDimension(isRound ? R.dimen.digital_date_size_round : R.dimen.digital_date_size);
+        float textSize = getDimension( R.dimen.digital_date_size );
         mDatePaint.setTextSize(textSize);
 
         Rect rcBounds = new Rect();

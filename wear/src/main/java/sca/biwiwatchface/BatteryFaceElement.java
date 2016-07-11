@@ -74,7 +74,7 @@ public class BatteryFaceElement extends AbstractFaceElement {
 
     public void onApplyWindowInsets(WindowInsets insets) {
         boolean isRound = insets.isRound();
-        float textSize = getDimension(isRound ? R.dimen.digital_battery_size_round : R.dimen.digital_battery_size);
+        float textSize = getDimension( R.dimen.digital_battery_size );
         mBatteryPaint.setTextSize(textSize);
 
         Rect rcTextBounds = new Rect();

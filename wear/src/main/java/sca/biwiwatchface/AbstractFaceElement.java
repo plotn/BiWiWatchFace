@@ -1,10 +1,13 @@
 package sca.biwiwatchface;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
+import android.graphics.Rect;
+import android.support.wearable.watchface.WatchFaceService;
 import android.view.WindowInsets;
 
 import java.util.Calendar;
@@ -14,6 +17,7 @@ public abstract class AbstractFaceElement {
     private Context mContext;
     private Resources mResources;
     private boolean mInAmbientMode;
+    private Rect mTapBounds;
 
     public AbstractFaceElement(Context context) {
         mContext = context;
@@ -29,6 +33,10 @@ public abstract class AbstractFaceElement {
 
     public float getDimension( int dimensionId ) {
         return mResources.getDimension( dimensionId );
+    }
+    public void startActivity( Intent intent ) {
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        mContext.startActivity(  intent );
     }
 
     public Bitmap getBitmap( int bitmapId ) {
@@ -55,5 +63,17 @@ public abstract class AbstractFaceElement {
     public void drawTime( Canvas canvas, Calendar calendar, FaceBoundComputer boundComputer, int x, int y) {
         drawTime( canvas, calendar, x, y );
     }
+
+    protected void setTapBounds( Rect tapBounds) { mTapBounds = tapBounds; }
+
+    public void onTapCommand(int tapType, int x, int y, long eventTime) {
+        if ( mTapBounds != null ) {
+            if ( tapType == WatchFaceService.TAP_TYPE_TAP && mTapBounds.contains( x, y ) ) {
+                doTapCommand( tapType, x, y, eventTime );
+            }
+        }
+    }
+
+    public void doTapCommand( int tapType, int x, int y, long eventTime ) {}
 
 }

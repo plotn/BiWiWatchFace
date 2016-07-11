@@ -1,35 +1,20 @@
 package sca.biwiwatchface;
 
-import android.Manifest;
-import android.content.BroadcastReceiver;
-import android.content.ContentUris;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
-import android.content.pm.PackageManager;
-import android.database.Cursor;
 import android.graphics.Canvas;
 import android.graphics.Rect;
 import android.graphics.Typeface;
-import android.net.Uri;
-import android.os.PowerManager;
-import android.provider.CalendarContract;
-import android.support.v4.app.ActivityCompat;
-import android.support.wearable.provider.WearableCalendarContract;
+import android.support.wearable.watchface.WatchFaceService;
 import android.text.TextPaint;
-import android.text.format.DateUtils;
-import android.util.Log;
 import android.view.WindowInsets;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Date;
-import java.util.Locale;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
+
+import sca.biwiwatchface.data.Meeting;
+import sca.biwiwatchface.data.MeetingInfoProvider;
 
 public class MeetingFaceElement extends AbstractFaceElement {
 
@@ -39,9 +24,9 @@ public class MeetingFaceElement extends AbstractFaceElement {
     final TextPaint mDatePaint;
     ArrayList<Meeting> mLastValue = null;
     ArrayList<PositionedMeeting> mlstPositionedMeetings = new ArrayList<>();
-    MeetingInfo mMeetingInfo;
-    private float mLineHeigth;
-    FaceBoundComputer mFaceLayout = new FaceBoundComputer();
+    MeetingInfoProvider mMeetingInfoProvider;
+    private float mLineHeight;
+    private int mLastYDraw;
 
     public MeetingFaceElement( Context context ) {
         super( context );
@@ -59,7 +44,7 @@ public class MeetingFaceElement extends AbstractFaceElement {
 
         setAntiAlias( true );
 
-        mMeetingInfo = new MeetingInfo( context );
+        mMeetingInfoProvider = new MeetingInfoProvider( context );
     }
 
     @Override
@@ -70,15 +55,13 @@ public class MeetingFaceElement extends AbstractFaceElement {
 
     @Override
     public void onApplyWindowInsets( WindowInsets insets ) {
-        boolean isRound = insets.isRound();
-
-        float textSize = getDimension(isRound ? R.dimen.digital_calendar_size_round : R.dimen.digital_calendar_size);
+        float textSize = getDimension( R.dimen.digital_calendar_size );
         mTitlePaint.setTextSize(textSize);
         mDatePaint.setTextSize(textSize);
 
         Rect rcBounds = new Rect();
         mDatePaint.getTextBounds(DATE_MEASURE_STRING, 0, DATE_MEASURE_STRING.length(), rcBounds );
-        mLineHeigth = rcBounds.height();
+        mLineHeight = rcBounds.height();
     }
 
     private static int getTextWidth( TextPaint paint, String text ) {
@@ -89,39 +72,50 @@ public class MeetingFaceElement extends AbstractFaceElement {
 
     @Override
     public void drawTime( Canvas canvas, Calendar calendar, FaceBoundComputer boundComputer, int x, int y ) {
-        ArrayList<Meeting> currentValue = mMeetingInfo.getLstMeetings();
+        ArrayList<Meeting> currentValue = mMeetingInfoProvider.getLstMeetings();
 
         if ( currentValue != mLastValue ) {
             mLastValue = currentValue;
             mlstPositionedMeetings.clear();
             int currentY = y;
             for (Meeting meeting : currentValue) {
-                String begin = meeting.mBeginDate;
+                String begin = meeting.getBeginDate();
                 int dateWidth = getTextWidth( mDatePaint, begin+"x" );
-                int xBoundLeft = boundComputer.getLeftSide( currentY + (int)(mLineHeigth/2) );
+                int xBoundLeft = boundComputer.getLeftSide( currentY + (int)(mLineHeight /2) );
                 mlstPositionedMeetings.add( new PositionedMeeting( meeting, xBoundLeft, xBoundLeft+dateWidth, currentY ) );
-                currentY += mLineHeigth;
+                currentY += mLineHeight;
+                if (! boundComputer.isYInScreen( currentY ) ) break;
             }
         }
 
         if ( mlstPositionedMeetings != null ) {
             for ( PositionedMeeting positionedMeeting : mlstPositionedMeetings ) {
-                canvas.drawText( positionedMeeting.mMeting.mBeginDate, positionedMeeting.mXDate, positionedMeeting.mY, mDatePaint );
-                canvas.drawText( positionedMeeting.mMeting.mTitle, positionedMeeting.mXTitle, positionedMeeting.mY, mTitlePaint );
+                canvas.drawText( positionedMeeting.mMeting.getBeginDate(), positionedMeeting.mXDate, positionedMeeting.mY, mDatePaint );
+                canvas.drawText( positionedMeeting.mMeting.getTitle(), positionedMeeting.mXTitle, positionedMeeting.mY, mTitlePaint );
             }
+        }
+        mLastYDraw = y;
+    }
+
+    public void onTapCommand(int tapType, int x, int y, long eventTime) {
+        if ( tapType == WatchFaceService.TAP_TYPE_TAP && y > mLastYDraw-mLineHeight ) {
+            Intent calendarIntent = new Intent();
+            calendarIntent.setAction(Intent.ACTION_MAIN);
+            calendarIntent.addCategory( Intent.CATEGORY_APP_CALENDAR );
+            startActivity(calendarIntent);
         }
     }
 
     @Override
     public void startSync( ScheduledExecutorService executorService ) {
         if (isInInteractiveMode()) {
-            mMeetingInfo.startSync( executorService );
+            mMeetingInfoProvider.startSync( executorService );
         }
     }
 
     @Override
     public void stopSync() {
-        mMeetingInfo.stopSync();
+        mMeetingInfoProvider.stopSync();
     }
 
     private static class PositionedMeeting {
@@ -139,140 +133,5 @@ public class MeetingFaceElement extends AbstractFaceElement {
     }
 
 
-    private static class Meeting {
-        private String mBeginDate;
-        private String mTitle;
-
-        public Meeting( String beginDate, String title ) {
-            mBeginDate = beginDate;
-            mTitle = title;
-        }
-
-        @Override
-        public boolean equals( Object o ) {
-            if ( ! (o instanceof Meeting) ) return false;
-            Meeting otherMeeting = (Meeting) o;
-            return mBeginDate.equals( otherMeeting.mBeginDate )
-                    && mTitle.equals( otherMeeting.mTitle );
-        }
-    }
-
-
-    private static class MeetingInfo {
-        private static final String LOG_TAG = MeetingInfo.class.getSimpleName();
-
-        private AtomicReference<ArrayList<Meeting>> mLstMeetings = new AtomicReference<>();
-
-        private Context mContext;
-        ScheduledExecutorService mExecutor;
-        private boolean syncing;
-
-        private Runnable mLoaderRunnable;
-        private BroadcastReceiver mBroadcastReceiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive( Context context, Intent intent ) {
-                if (Intent.ACTION_PROVIDER_CHANGED.equals(intent.getAction())
-                        && WearableCalendarContract.CONTENT_URI.equals(intent.getData())) {
-                    Log.d( LOG_TAG, "onReceive" );
-                    mExecutor.execute( mLoaderRunnable );
-                }
-            }
-        };
-
-        public MeetingInfo( Context context ) {
-            mContext = context;
-            mLoaderRunnable = new MeetingLoader( mContext, mLstMeetings );
-        }
-
-        public ArrayList<Meeting> getLstMeetings() {
-            return mLstMeetings.get();
-        }
-
-        public void startSync( ScheduledExecutorService executor ) {
-            Log.d( LOG_TAG, "startSync" );
-            mExecutor = executor;
-            boolean permissionGranted = ActivityCompat.checkSelfPermission( mContext, Manifest.permission.READ_CALENDAR) == PackageManager.PERMISSION_GRANTED;
-
-            if (permissionGranted && ! syncing) {
-                IntentFilter filter = new IntentFilter( Intent.ACTION_PROVIDER_CHANGED );
-                filter.addDataScheme( "content" );
-                filter.addDataAuthority( WearableCalendarContract.AUTHORITY, null );
-                mContext.registerReceiver( mBroadcastReceiver, filter );
-                mExecutor.scheduleWithFixedDelay( mLoaderRunnable, 0, 60, TimeUnit.SECONDS );
-                syncing = true;
-            }
-        }
-
-        public void stopSync( ) {
-            Log.d( LOG_TAG, "stopSync" );
-            if (syncing) {
-                mExecutor = null;
-                mContext.unregisterReceiver( mBroadcastReceiver );
-                syncing = false;
-            }
-        }
-
-        private static class MeetingLoader implements Runnable {
-            private Context mContext;
-            private AtomicReference<ArrayList<Meeting>> mLstMeetings;
-
-            private DateFormat mTimeFormat = new SimpleDateFormat("H:mm", Locale.getDefault());
-            private PowerManager.WakeLock mWakeLock;
-
-            private static final String[] PROJECTION = {
-                    CalendarContract.Instances.BEGIN,
-                    CalendarContract.Instances.TITLE,
-                    CalendarContract.Instances.ALL_DAY
-            };
-            private static final int COL_INSTANCE_BEGIN = 0;
-            private static final int COL_INSTANCE_TITLE = 1;
-            private static final int COL_INSTANCE_ALL_DAY = 2;
-
-            MeetingLoader(Context context, AtomicReference<ArrayList<Meeting>> lstMeetings) {
-                mContext = context;
-                mLstMeetings = lstMeetings;
-            }
-
-            @Override
-            public void run() {
-                Log.d( LOG_TAG, "run" );
-                PowerManager powerManager = (PowerManager) mContext.getSystemService(Context.POWER_SERVICE);
-                PowerManager.WakeLock wakeLock = powerManager.newWakeLock( PowerManager.PARTIAL_WAKE_LOCK, "CalendarWatchFaceWakeLock");
-                wakeLock.acquire();
-
-                long now = System.currentTimeMillis();
-                Uri.Builder builder = WearableCalendarContract.Instances.CONTENT_URI.buildUpon();
-                ContentUris.appendId( builder, now );
-                ContentUris.appendId( builder, now + DateUtils.DAY_IN_MILLIS);
-                Uri calendarUri = builder.build();
-
-                final Cursor cursor = mContext.getContentResolver().query( calendarUri, PROJECTION, null, null, null );
-
-                if (cursor != null) {
-                    ArrayList<Meeting> lstAllDayMeetings = new ArrayList<>();
-                    ArrayList<Meeting> lstInDayMeetings = new ArrayList<>();
-                    while ( cursor.moveToNext() ) {
-                        String instanceTitle = cursor.getString( COL_INSTANCE_TITLE );
-                        boolean isAllDay = cursor.getInt( COL_INSTANCE_ALL_DAY ) == 1;
-                        long instanceBegin = cursor.getLong( COL_INSTANCE_BEGIN );
-                        if ( isAllDay ) {
-                            int idPrefixString = instanceBegin > now ? R.string.tomorrow : R.string.today;
-                            lstAllDayMeetings.add( new Meeting( mContext.getString( idPrefixString ), instanceTitle ) );
-                        } else {
-                            Date startDate = new Date( instanceBegin );
-                            lstInDayMeetings.add( new Meeting( mTimeFormat.format( startDate ), instanceTitle ));
-                        }
-                    }
-                    cursor.close();
-                    lstInDayMeetings.addAll( lstAllDayMeetings );
-                    mLstMeetings.set( lstInDayMeetings );
-                }
-
-                wakeLock.release();
-                Log.d( LOG_TAG, "run complete" );
-            }
-        }
-
-    }
 
 }

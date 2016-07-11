@@ -105,7 +105,6 @@ public class MainWatchFace extends CanvasWatchFaceService {
                 mCalendar.setTimeZone(TimeZone.getDefault());
             }
         };
-        int mTapCount;
 
         /**
          * Whether the display supports fewer bits for each color in ambient mode. When true, we
@@ -192,7 +191,7 @@ public class MainWatchFace extends CanvasWatchFaceService {
             Log.d( LOG_TAG, "onApplyWindowInsets");
             super.onApplyWindowInsets(insets);
 
-            mBoundComputer.setDimensions( mBoundRectWrapper, insets.isRound() );
+            mBoundComputer.setDimensions( mBoundRectWrapper, insets.isRound(), insets.getSystemWindowInsetBottom() );
 
             for (AbstractFaceElement element : mLstFaceElement) {
                 element.onApplyWindowInsets( insets );
@@ -237,22 +236,9 @@ public class MainWatchFace extends CanvasWatchFaceService {
          */
         @Override
         public void onTapCommand(int tapType, int x, int y, long eventTime) {
-            //Resources resources = MainWatchFace.this.getResources();
-            switch (tapType) {
-                case TAP_TYPE_TOUCH:
-                    // The user has started touching the screen.
-                    break;
-                case TAP_TYPE_TOUCH_CANCEL:
-                    // The user has started a different gesture or otherwise cancelled the tap.
-                    break;
-                case TAP_TYPE_TAP:
-                    // The user has completed the tap gesture.
-                    mTapCount++;
-                    //mBackgroundPaint.setColor(resources.getColor(mTapCount % 2 == 0 ?
-                    //        R.color.background : R.color.background2));
-                    break;
+            for (AbstractFaceElement element : mLstFaceElement) {
+                element.onTapCommand( tapType, x, y, eventTime );
             }
-            invalidate();
         }
 
         @Override

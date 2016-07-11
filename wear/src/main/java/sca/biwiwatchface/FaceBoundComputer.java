@@ -6,10 +6,12 @@ public class FaceBoundComputer {
 
     private RectWrapper mBounds;
     private boolean mIsRound;
+    private int mChinSize;
 
-    void setDimensions( RectWrapper bounds, boolean isRound ) {
+    void setDimensions( RectWrapper bounds, boolean isRound, int chinSize ) {
         mBounds = bounds;
         mIsRound = isRound;
+        mChinSize = chinSize;
     }
 
     int getLeftSide( int y ) {
@@ -24,6 +26,10 @@ public class FaceBoundComputer {
             int xSide = (int) Math.floor( Math.sqrt( x2 ) );
             return mBounds.centerX() - xSide;
         }
+    }
+
+    boolean isYInScreen( int y ) {
+        return y < mBounds.bottom()-mChinSize;
     }
     
 

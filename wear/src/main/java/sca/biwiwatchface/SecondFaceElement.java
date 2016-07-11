@@ -38,8 +38,7 @@ public class SecondFaceElement extends AbstractFaceElement {
 
     @Override
     public void onApplyWindowInsets(WindowInsets insets) {
-        boolean isRound = insets.isRound();
-        float textSize = getDimension(isRound ? R.dimen.digital_second_size_round : R.dimen.digital_second_size);
+        float textSize = getDimension( R.dimen.digital_second_size );
         mSecondPaint.setTextSize(textSize);
 
         Rect rcBounds = new Rect();
