@@ -20,10 +20,8 @@ public abstract class AbstractFaceElement {
         mResources = mContext.getResources();
     }
 
-    public void startExecutorService( ScheduledExecutorService executorService ) {}
-    public void stopExecutorService( ) {}
-
-    public Context getContext() { return mContext; }
+    public void startSync( ScheduledExecutorService executorService ) {}
+    public void stopSync( ) {}
 
     public int getColor( int colorId ) {
         return mResources.getColor( colorId, mContext.getTheme() );
@@ -44,9 +42,6 @@ public abstract class AbstractFaceElement {
         }
     }
 
-    public void onVisibilityChanged(boolean visible) {
-    }
-
     public boolean isInAmbientMode() { return mInAmbientMode; }
 
     public boolean isInInteractiveMode() { return !mInAmbientMode; }
@@ -55,7 +50,10 @@ public abstract class AbstractFaceElement {
 
     public abstract void onApplyWindowInsets(WindowInsets insets);
 
-    public abstract void drawTime( Canvas canvas, Calendar calendar, int x, int y);
+    public void drawTime( Canvas canvas, Calendar calendar, int x, int y) {}
 
+    public void drawTime( Canvas canvas, Calendar calendar, FaceBoundComputer boundComputer, int x, int y) {
+        drawTime( canvas, calendar, x, y );
+    }
 
 }

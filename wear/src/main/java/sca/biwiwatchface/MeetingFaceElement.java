@@ -9,17 +9,13 @@ import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Canvas;
+import android.graphics.Rect;
 import android.graphics.Typeface;
 import android.net.Uri;
 import android.os.PowerManager;
 import android.provider.CalendarContract;
 import android.support.v4.app.ActivityCompat;
 import android.support.wearable.provider.WearableCalendarContract;
-import android.text.DynamicLayout;
-import android.text.Editable;
-import android.text.Html;
-import android.text.Layout;
-import android.text.SpannableStringBuilder;
 import android.text.TextPaint;
 import android.text.format.DateUtils;
 import android.util.Log;
@@ -27,6 +23,7 @@ import android.view.WindowInsets;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
@@ -36,22 +33,29 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class MeetingFaceElement extends AbstractFaceElement {
 
-    final TextPaint mCalendarPaint;
-    String mLastValue = "";
-    final Editable mEditable = new SpannableStringBuilder();
-    DynamicLayout mLayout;
+    private static final String DATE_MEASURE_STRING = "Lj";
+
+    final TextPaint mTitlePaint;
+    final TextPaint mDatePaint;
+    ArrayList<Meeting> mLastValue = null;
+    ArrayList<PositionedMeeting> mlstPositionedMeetings = new ArrayList<>();
     MeetingInfo mMeetingInfo;
+    private float mLineHeigth;
+    FaceBoundComputer mFaceLayout = new FaceBoundComputer();
 
     public MeetingFaceElement( Context context ) {
         super( context );
 
         int textColor = getColor( R.color.calendar );
-        Typeface typefaceMedium = Typeface.create("sans-serif", Typeface.NORMAL);
+        Typeface typefaceNormal = Typeface.create("sans-serif", Typeface.NORMAL);
+        mTitlePaint = new TextPaint();
+        mTitlePaint.setColor(textColor);
+        mTitlePaint.setTypeface(typefaceNormal);
 
-        mCalendarPaint = new TextPaint();
-        mCalendarPaint.setColor(textColor);
-        mCalendarPaint.setTypeface(typefaceMedium);
-        mLayout = new DynamicLayout( mEditable, mCalendarPaint, 190,  Layout.Alignment.ALIGN_NORMAL, 1, 0, false );
+        Typeface typefaceBold = Typeface.create("sans-serif", Typeface.BOLD);
+        mDatePaint = new TextPaint();
+        mDatePaint.setColor(textColor);
+        mDatePaint.setTypeface(typefaceBold);
 
         setAntiAlias( true );
 
@@ -60,48 +64,104 @@ public class MeetingFaceElement extends AbstractFaceElement {
 
     @Override
     public void setAntiAlias( boolean enabled ) {
-        mCalendarPaint.setAntiAlias( enabled );
+        mTitlePaint.setAntiAlias( enabled );
+        mDatePaint.setAntiAlias( enabled );
     }
 
     @Override
     public void onApplyWindowInsets( WindowInsets insets ) {
         boolean isRound = insets.isRound();
+
         float textSize = getDimension(isRound ? R.dimen.digital_calendar_size_round : R.dimen.digital_calendar_size);
-        mCalendarPaint.setTextSize(textSize);
+        mTitlePaint.setTextSize(textSize);
+        mDatePaint.setTextSize(textSize);
+
+        Rect rcBounds = new Rect();
+        mDatePaint.getTextBounds(DATE_MEASURE_STRING, 0, DATE_MEASURE_STRING.length(), rcBounds );
+        mLineHeigth = rcBounds.height();
+    }
+
+    private static int getTextWidth( TextPaint paint, String text ) {
+        Rect rcBounds = new Rect();
+        paint.getTextBounds( text, 0, text.length(), rcBounds );
+        return rcBounds.width();
     }
 
     @Override
-    public void drawTime( Canvas canvas, Calendar calendar, int x, int y ) {
-        String currentValue = mMeetingInfo.getMeetingHtml();
+    public void drawTime( Canvas canvas, Calendar calendar, FaceBoundComputer boundComputer, int x, int y ) {
+        ArrayList<Meeting> currentValue = mMeetingInfo.getLstMeetings();
 
-        if (!currentValue.equals( mLastValue )) {
-            mEditable.clear();
-            mEditable.append( Html.fromHtml(currentValue) );
+        if ( currentValue != mLastValue ) {
             mLastValue = currentValue;
+            mlstPositionedMeetings.clear();
+            int currentY = y;
+            for (Meeting meeting : currentValue) {
+                String begin = meeting.mBeginDate;
+                int dateWidth = getTextWidth( mDatePaint, begin+"x" );
+                int xBoundLeft = boundComputer.getLeftSide( currentY );
+                mlstPositionedMeetings.add( new PositionedMeeting( meeting, xBoundLeft, xBoundLeft+dateWidth, currentY ) );
+                currentY += mLineHeigth;
+            }
         }
-        canvas.save();
-        canvas.translate( x-mLayout.getWidth()/2, y );
-        mLayout.draw(canvas);
-        canvas.restore();
+
+        if ( mlstPositionedMeetings != null ) {
+            for ( PositionedMeeting positionedMeeting : mlstPositionedMeetings ) {
+                canvas.drawText( positionedMeeting.mMeting.mBeginDate, positionedMeeting.mXDate, positionedMeeting.mY, mDatePaint );
+                canvas.drawText( positionedMeeting.mMeting.mTitle, positionedMeeting.mXTitle, positionedMeeting.mY, mTitlePaint );
+            }
+        }
     }
 
     @Override
-    public void startExecutorService( ScheduledExecutorService executorService ) {
+    public void startSync( ScheduledExecutorService executorService ) {
         if (isInInteractiveMode()) {
             mMeetingInfo.startSync( executorService );
         }
     }
 
     @Override
-    public void stopExecutorService() {
+    public void stopSync() {
         mMeetingInfo.stopSync();
+    }
+
+    private static class PositionedMeeting {
+        private Meeting mMeting;
+        private int mXDate;
+        private int mXTitle;
+        private int mY;
+
+        PositionedMeeting( Meeting meeting, int xDate, int xTitle, int y) {
+            mMeting = meeting;
+            mXDate = xDate;
+            mXTitle = xTitle;
+            mY = y;
+        }
+    }
+
+
+    private static class Meeting {
+        private String mBeginDate;
+        private String mTitle;
+
+        public Meeting( String beginDate, String title ) {
+            mBeginDate = beginDate;
+            mTitle = title;
+        }
+
+        @Override
+        public boolean equals( Object o ) {
+            if ( ! (o instanceof Meeting) ) return false;
+            Meeting otherMeeting = (Meeting) o;
+            return mBeginDate.equals( otherMeeting.mBeginDate )
+                    && mTitle.equals( otherMeeting.mTitle );
+        }
     }
 
 
     private static class MeetingInfo {
         private static final String LOG_TAG = MeetingInfo.class.getSimpleName();
 
-        private AtomicReference<String> mMeetingHtml = new AtomicReference<>("");
+        private AtomicReference<ArrayList<Meeting>> mLstMeetings = new AtomicReference<>();
 
         private Context mContext;
         ScheduledExecutorService mExecutor;
@@ -121,11 +181,11 @@ public class MeetingFaceElement extends AbstractFaceElement {
 
         public MeetingInfo( Context context ) {
             mContext = context;
-            mLoaderRunnable = new MeetingLoader( mContext, mMeetingHtml );
+            mLoaderRunnable = new MeetingLoader( mContext, mLstMeetings );
         }
 
-        public String getMeetingHtml() {
-            return mMeetingHtml.get();
+        public ArrayList<Meeting> getLstMeetings() {
+            return mLstMeetings.get();
         }
 
         public void startSync( ScheduledExecutorService executor ) {
@@ -154,7 +214,7 @@ public class MeetingFaceElement extends AbstractFaceElement {
 
         private static class MeetingLoader implements Runnable {
             private Context mContext;
-            private AtomicReference<String> mMeetingHtml;
+            private AtomicReference<ArrayList<Meeting>> mLstMeetings;
 
             private DateFormat mTimeFormat = new SimpleDateFormat("H:mm", Locale.getDefault());
             private PowerManager.WakeLock mWakeLock;
@@ -168,9 +228,9 @@ public class MeetingFaceElement extends AbstractFaceElement {
             private static final int COL_INSTANCE_TITLE = 1;
             private static final int COL_INSTANCE_ALL_DAY = 2;
 
-            MeetingLoader(Context context, AtomicReference<String> meetingHtml) {
+            MeetingLoader(Context context, AtomicReference<ArrayList<Meeting>> lstMeetings) {
                 mContext = context;
-                mMeetingHtml = meetingHtml;
+                mLstMeetings = lstMeetings;
             }
 
             @Override
@@ -189,25 +249,27 @@ public class MeetingFaceElement extends AbstractFaceElement {
                 final Cursor cursor = mContext.getContentResolver().query( calendarUri, PROJECTION, null, null, null );
 
                 if (cursor != null) {
-                    StringBuilder sb = new StringBuilder();
+                    ArrayList<Meeting> lstAllDayMeetings = new ArrayList<>();
+                    ArrayList<Meeting> lstInDayMeetings = new ArrayList<>();
                     while ( cursor.moveToNext() ) {
                         String instanceTitle = cursor.getString( COL_INSTANCE_TITLE );
                         boolean isAllDay = cursor.getInt( COL_INSTANCE_ALL_DAY ) == 1;
                         long instanceBegin = cursor.getLong( COL_INSTANCE_BEGIN );
                         if ( isAllDay ) {
                             int idPrefixString = instanceBegin > now ? R.string.tomorrow : R.string.today;
-                            sb.append( String.format( "<b>%s</b> %s<br/>", mContext.getString( idPrefixString ), instanceTitle ) );
+                            lstAllDayMeetings.add( new Meeting( mContext.getString( idPrefixString ), instanceTitle ) );
                         } else {
                             Date startDate = new Date( instanceBegin );
-                            sb.append( String.format( "<b>%s</b> %s<br/>", mTimeFormat.format( startDate ), instanceTitle ) );
+                            lstInDayMeetings.add( new Meeting( mTimeFormat.format( startDate ), instanceTitle ));
                         }
                     }
                     cursor.close();
-
-                    mMeetingHtml.set( sb.toString() );
+                    lstInDayMeetings.addAll( lstAllDayMeetings );
+                    mLstMeetings.set( lstInDayMeetings );
                 }
 
                 wakeLock.release();
+                Log.d( LOG_TAG, "run complete" );
             }
         }
 

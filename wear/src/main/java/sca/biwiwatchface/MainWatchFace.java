@@ -27,6 +27,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import sca.biwiwatchface.apiwrap.ProductionRectWrapper;
+
 /* Emulator launch:
 telnet localhost 5554
 auth /MlEbZ6a8HZ5jilz
@@ -80,6 +82,9 @@ public class MainWatchFace extends CanvasWatchFaceService {
 
         final Handler mUpdateTimeHandler = new EngineHandler(this);
         boolean mRegisteredTimeZoneReceiver = false;
+
+        ProductionRectWrapper mBoundRectWrapper = new ProductionRectWrapper();
+        FaceBoundComputer mBoundComputer = new FaceBoundComputer();
 
         Paint mBackgroundPaint;
         List<AbstractFaceElement> mLstFaceElement;
@@ -140,7 +145,7 @@ public class MainWatchFace extends CanvasWatchFaceService {
         public void onDestroy() {
             Log.d( LOG_TAG, "onDestroy" );
             mUpdateTimeHandler.removeMessages(MSG_UPDATE_TIME);
-            stopExecutorService();
+            stopSync();
             super.onDestroy();
         }
 
@@ -151,17 +156,13 @@ public class MainWatchFace extends CanvasWatchFaceService {
 
             if (visible) {
                 registerReceiver();
-                startExecutorService();
+                startSync();
 
                 // Update time zone in case it changed while we weren't visible.
                 mCalendar.setTimeZone(TimeZone.getDefault());
             } else {
-                stopExecutorService();
+                stopSync();
                 unregisterReceiver();
-            }
-
-            for (AbstractFaceElement element : mLstFaceElement) {
-                element.onVisibilityChanged( visible );
             }
 
             // Whether the timer should be running depends on whether we're visible (as well as
@@ -191,6 +192,8 @@ public class MainWatchFace extends CanvasWatchFaceService {
             Log.d( LOG_TAG, "onApplyWindowInsets");
             super.onApplyWindowInsets(insets);
 
+            mBoundComputer.setDimensions( mBoundRectWrapper, insets.isRound() );
+
             for (AbstractFaceElement element : mLstFaceElement) {
                 element.onApplyWindowInsets( insets );
             }
@@ -218,8 +221,8 @@ public class MainWatchFace extends CanvasWatchFaceService {
                 for (AbstractFaceElement element : mLstFaceElement) {
                     element.onAmbientModeChanged( mAmbient, mLowBitAmbient );
                 }
-                stopExecutorService();
-                startExecutorService();
+                stopSync();
+                startSync();
                 invalidate();
             }
 
@@ -234,7 +237,7 @@ public class MainWatchFace extends CanvasWatchFaceService {
          */
         @Override
         public void onTapCommand(int tapType, int x, int y, long eventTime) {
-            Resources resources = MainWatchFace.this.getResources();
+            //Resources resources = MainWatchFace.this.getResources();
             switch (tapType) {
                 case TAP_TYPE_TOUCH:
                     // The user has started touching the screen.
@@ -255,6 +258,8 @@ public class MainWatchFace extends CanvasWatchFaceService {
         @Override
         public void onDraw(Canvas canvas, Rect bounds) {
             Log.d( LOG_TAG, "onDraw");
+            mBoundRectWrapper.setRect( bounds );
+
             // Draw the background.
             if (isInAmbientMode()) {
                 canvas.drawColor(Color.BLACK);
@@ -269,7 +274,7 @@ public class MainWatchFace extends CanvasWatchFaceService {
                 mDatePaint.drawTime(canvas, mCalendar, bounds.centerX(), bounds.centerY() - 80);
                 mSecondPaint.drawTime( canvas, mCalendar, bounds.right - 30, bounds.centerY() + 60 );
                 mBatteryPaint.drawTime( canvas, mCalendar, bounds.left + 30, bounds.centerY() + 60 );
-                mCalendarPaint.drawTime( canvas, mCalendar, bounds.centerX(), bounds.centerY() + 80 );
+                mCalendarPaint.drawTime( canvas, mCalendar, mBoundComputer, bounds.centerX(), bounds.centerY() + 100 );
             }
         }
 
@@ -305,21 +310,21 @@ public class MainWatchFace extends CanvasWatchFaceService {
             }
         }
 
-        private void startExecutorService() {
+        private void startSync() {
             if (null == mExecutorService) {
                 mExecutorService = Executors.newSingleThreadScheduledExecutor();
                 for (AbstractFaceElement element : mLstFaceElement) {
-                    element.startExecutorService( mExecutorService );
+                    element.startSync( mExecutorService );
                 }
             }
         }
 
-        private void stopExecutorService() {
+        private void stopSync() {
             if (null != mExecutorService) {
                 mExecutorService.shutdownNow();
                 mExecutorService = null;
                 for (AbstractFaceElement element : mLstFaceElement) {
-                    element.stopExecutorService();
+                    element.stopSync();
                 }
             }
         }

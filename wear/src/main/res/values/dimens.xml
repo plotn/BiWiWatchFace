@@ -9,5 +9,5 @@
     <dimen name="digital_battery_size">10dp</dimen>
     <dimen name="digital_battery_size_round">15dp</dimen>
     <dimen name="digital_calendar_size">10dp</dimen>
-    <dimen name="digital_calendar_size_round">14dp</dimen>
+    <dimen name="digital_calendar_size_round">15dp</dimen>
 </resources>

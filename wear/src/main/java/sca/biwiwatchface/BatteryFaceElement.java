@@ -63,7 +63,7 @@ public class BatteryFaceElement extends AbstractFaceElement {
         setAntiAlias(true);
     }
 
-    public void startExecutorService( ScheduledExecutorService executorService ) {
+    public void startSync( ScheduledExecutorService executorService ) {
         mBatteryInfo.startExecutorService( executorService );
     }
 

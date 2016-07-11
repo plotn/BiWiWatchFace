@@ -72,7 +72,7 @@ public class TimeFaceElement extends AbstractFaceElement {
 
     @Override
     public void drawTime( Canvas canvas, Calendar calendar, int x, int y) {
-        String szHour = Integer.toString( calendar.get(Calendar.HOUR) );
+        String szHour = Integer.toString( calendar.get(Calendar.HOUR_OF_DAY) );
         String szMinute = String.format(Locale.US, "%02d", calendar.get(Calendar.MINUTE) );
 
         float hourWidth = mHourPaint.measureText(szHour);
