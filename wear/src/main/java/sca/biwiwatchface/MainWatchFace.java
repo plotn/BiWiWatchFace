@@ -9,14 +9,29 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.wearable.watchface.CanvasWatchFaceService;
 import android.support.wearable.watchface.WatchFaceStyle;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.WindowInsets;
+
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.ResultCallback;
+import com.google.android.gms.wearable.DataApi;
+import com.google.android.gms.wearable.DataEvent;
+import com.google.android.gms.wearable.DataEventBuffer;
+import com.google.android.gms.wearable.DataItem;
+import com.google.android.gms.wearable.DataItemBuffer;
+import com.google.android.gms.wearable.PutDataMapRequest;
+import com.google.android.gms.wearable.PutDataRequest;
+import com.google.android.gms.wearable.Wearable;
 
 import java.lang.ref.WeakReference;
 import java.util.Arrays;
@@ -78,25 +93,26 @@ public class MainWatchFace extends CanvasWatchFaceService {
     }
 
     private class Engine extends CanvasWatchFaceService.Engine {
-        private final String LOG_TAG = Engine.class.getSimpleName();
+        private final String TAG = Engine.class.getSimpleName();
 
         final Handler mUpdateTimeHandler = new EngineHandler(this);
         boolean mRegisteredTimeZoneReceiver = false;
 
-        ProductionRectWrapper mBoundRectWrapper = new ProductionRectWrapper();
-        FaceBoundComputer mBoundComputer = new FaceBoundComputer();
+        private ProductionRectWrapper mBoundRectWrapper = new ProductionRectWrapper();
+        private FaceBoundComputer mBoundComputer = new FaceBoundComputer();
 
-        Paint mBackgroundPaint;
-        List<AbstractFaceElement> mLstFaceElement;
-        TimeFaceElement mTimePaint;
-        DateFaceElement mDatePaint;
-        SecondFaceElement mSecondPaint;
-        BatteryFaceElement mBatteryPaint;
-        MeetingFaceElement mCalendarPaint;
+        private Paint mBackgroundPaint;
+        private List<AbstractFaceElement> mLstFaceElement;
+        private TimeFaceElement mTimePaint;
+        private DateFaceElement mDatePaint;
+        private SecondFaceElement mSecondPaint;
+        private BatteryFaceElement mBatteryPaint;
+        private MeetingFaceElement mCalendarPaint;
+        private WeatherFaceElement mWeatherPaint;
 
         private ScheduledExecutorService mExecutorService;
-
         boolean mAmbient;
+
         private Calendar mCalendar;
 
         final BroadcastReceiver mTimeZoneReceiver = new BroadcastReceiver() {
@@ -105,16 +121,16 @@ public class MainWatchFace extends CanvasWatchFaceService {
                 mCalendar.setTimeZone(TimeZone.getDefault());
             }
         };
-
         /**
          * Whether the display supports fewer bits for each color in ambient mode. When true, we
          * disable anti-aliasing in ambient mode.
          */
         boolean mLowBitAmbient;
+        private MobileLink mMobileLink;
 
         @Override
         public void onCreate(SurfaceHolder holder) {
-            Log.d( LOG_TAG, "onCreate" );
+            Log.d( TAG, "onCreate" );
             super.onCreate(holder);
 
             setWatchFaceStyle(new WatchFaceStyle.Builder(MainWatchFace.this)
@@ -134,23 +150,27 @@ public class MainWatchFace extends CanvasWatchFaceService {
                     mSecondPaint = new SecondFaceElement( context ),
                     mDatePaint = new DateFaceElement( context ),
                     mBatteryPaint = new BatteryFaceElement( context ),
-                    mCalendarPaint = new MeetingFaceElement( context )
+                    mCalendarPaint = new MeetingFaceElement( context ),
+                    mWeatherPaint = new WeatherFaceElement( context )
             );
 
             mCalendar = Calendar.getInstance();
+
+            mMobileLink = new MobileLink();
         }
 
         @Override
         public void onDestroy() {
-            Log.d( LOG_TAG, "onDestroy" );
+            Log.d( TAG, "onDestroy" );
             mUpdateTimeHandler.removeMessages(MSG_UPDATE_TIME);
             stopSync();
+            mMobileLink.onDestroy();
             super.onDestroy();
         }
 
         @Override
         public void onVisibilityChanged(boolean visible) {
-            Log.d( LOG_TAG, "onVisibilityChanged " + visible );
+            //Log.d( TAG, "onVisibilityChanged " + visible );
             super.onVisibilityChanged(visible);
 
             if (visible) {
@@ -188,7 +208,7 @@ public class MainWatchFace extends CanvasWatchFaceService {
 
         @Override
         public void onApplyWindowInsets(WindowInsets insets) {
-            Log.d( LOG_TAG, "onApplyWindowInsets");
+            //Log.d( TAG, "onApplyWindowInsets");
             super.onApplyWindowInsets(insets);
 
             mBoundComputer.setDimensions( mBoundRectWrapper, insets.isRound(), insets.getSystemWindowInsetBottom() );
@@ -200,7 +220,7 @@ public class MainWatchFace extends CanvasWatchFaceService {
 
         @Override
         public void onPropertiesChanged(Bundle properties) {
-            Log.d( LOG_TAG, "onPropertiesChanged");
+            //Log.d( TAG, "onPropertiesChanged");
             super.onPropertiesChanged(properties);
             mLowBitAmbient = properties.getBoolean(PROPERTY_LOW_BIT_AMBIENT, false);
         }
@@ -213,7 +233,7 @@ public class MainWatchFace extends CanvasWatchFaceService {
 
         @Override
         public void onAmbientModeChanged(boolean inAmbientMode) {
-            Log.d( LOG_TAG, "onAmbientModeChanged " + inAmbientMode);
+            Log.d( TAG, "onAmbientModeChanged " + inAmbientMode);
             super.onAmbientModeChanged(inAmbientMode);
             if (mAmbient != inAmbientMode) {
                 mAmbient = inAmbientMode;
@@ -243,7 +263,7 @@ public class MainWatchFace extends CanvasWatchFaceService {
 
         @Override
         public void onDraw(Canvas canvas, Rect bounds) {
-            Log.d( LOG_TAG, "onDraw");
+            //Log.d( TAG, "onDraw");
             mBoundRectWrapper.setRect( bounds );
 
             // Draw the background.
@@ -261,7 +281,11 @@ public class MainWatchFace extends CanvasWatchFaceService {
                 mSecondPaint.drawTime( canvas, mCalendar, bounds.right - 30, bounds.centerY() + 60 );
                 mBatteryPaint.drawTime( canvas, mCalendar, bounds.left + 30, bounds.centerY() + 60 );
                 mCalendarPaint.drawTime( canvas, mCalendar, mBoundComputer, bounds.centerX(), bounds.centerY() + 100 );
+                mWeatherPaint.drawTime( canvas, mCalendar, bounds.centerX(), bounds.centerY() - 105 );
             }
+//            if (mCalendar.get(Calendar.SECOND) % 10 == 0 ) {
+//                mMobileLink.sendDataItemStart("/syncNow");
+//            }
         }
 
         /**
@@ -315,5 +339,97 @@ public class MainWatchFace extends CanvasWatchFaceService {
             }
         }
 
+
+        private class MobileLink implements DataApi.DataListener,
+                GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener,
+                ResultCallback<DataApi.DataItemResult> {
+            private GoogleApiClient mGoogleApiClient;
+
+
+            public MobileLink() {
+                mGoogleApiClient = new GoogleApiClient.Builder( MainWatchFace.this )
+                        .addApi( Wearable.API)
+                        .addConnectionCallbacks( this )
+                        .addOnConnectionFailedListener( this )
+                        .build();
+                mGoogleApiClient.connect();
+            }
+
+            public void onDestroy() {
+                Wearable.DataApi.removeListener(mGoogleApiClient, this);
+                mGoogleApiClient.disconnect();
+            }
+
+            @Override
+            public void onConnected( @Nullable Bundle connectionHint ) {
+                Log.d( TAG, "onConnected: " + connectionHint );
+                // Now you can use the Data Layer API
+                sendDataItemStart("/faceStarted");
+                Wearable.DataApi.addListener(mGoogleApiClient, this);
+
+                Uri test = Uri.parse( "wear://*/weather" );
+                Wearable.DataApi.getDataItems( mGoogleApiClient, test )
+                        .setResultCallback( new ResultCallback<DataItemBuffer>() {
+                    @Override
+                    public void onResult( @NonNull DataItemBuffer dataItems ) {
+                        if (dataItems.getCount() == 1 ) {
+                            DataItem cachedItem = dataItems.get(0);
+                            Log.d( TAG, "onResult: cachedItem=" + cachedItem.getUri() );
+                            mWeatherPaint.setDataItem( cachedItem );
+                        } else {
+                            sendDataItemStart( "/syncNow" );
+                        }
+                        dataItems.release();
+                    }
+                } );
+            }
+
+            @Override
+            public void onConnectionSuspended( int cause ) {
+                Log.d( TAG, "onConnectionSuspended: " + cause);
+            }
+
+            @Override
+            public void onConnectionFailed( @NonNull ConnectionResult result ) {
+                Log.d( TAG, "onConnectionFailed: " + result);
+            }
+
+            @Override
+            public void onDataChanged( DataEventBuffer dataEvents ) {
+                for (DataEvent event : dataEvents) {
+                    if (event.getType() == DataEvent.TYPE_CHANGED) {
+                        // DataItem changed
+                        DataItem item = event.getDataItem();
+                        if ( "/weather".equals( item.getUri().getPath() )) {
+                            Log.d( TAG, "onDataChanged: path=" + item.getUri() );
+                            mWeatherPaint.setDataItem( item );
+                        }
+                    }
+                }
+                dataEvents.release();
+            }
+
+            private void sendDataItemStart( String path ) {
+                PutDataMapRequest putDataMapRequest = PutDataMapRequest.create(path);
+                putDataMapRequest.getDataMap().putInt("random", (int) (100000*Math.random()) );
+                PutDataRequest request = putDataMapRequest.asPutDataRequest();
+                request.setUrgent();
+
+                Log.d( TAG, "Generating DataItem: " + request);
+                Wearable.DataApi.putDataItem(mGoogleApiClient, request)
+                        .setResultCallback( this );
+            }
+
+            @Override
+            public void onResult( @NonNull DataApi.DataItemResult dataItemResult ) {
+                if (!dataItemResult.getStatus().isSuccess()) {
+                    Log.e( TAG, "ERROR: failed to putDataItem, status code: "
+                            + dataItemResult.getStatus().getStatusCode());
+                }
+            }
+        }
+
     }
+
+
 }

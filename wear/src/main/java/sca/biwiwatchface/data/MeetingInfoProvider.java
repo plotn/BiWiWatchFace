@@ -104,7 +104,6 @@ public class MeetingInfoProvider {
 
         @Override
         public void run() {
-            Log.d( LOG_TAG, "run" );
             PowerManager powerManager = (PowerManager) mContext.getSystemService(Context.POWER_SERVICE);
             PowerManager.WakeLock wakeLock = powerManager.newWakeLock( PowerManager.PARTIAL_WAKE_LOCK, "CalendarWatchFaceWakeLock");
             wakeLock.acquire();
@@ -138,7 +137,6 @@ public class MeetingInfoProvider {
             }
 
             wakeLock.release();
-            Log.d( LOG_TAG, "run complete" );
         }
     }
 

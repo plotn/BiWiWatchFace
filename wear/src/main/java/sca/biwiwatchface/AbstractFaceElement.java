@@ -43,6 +43,8 @@ public abstract class AbstractFaceElement {
         return BitmapFactory.decodeResource( mResources, bitmapId );
     }
 
+    public Context getContext() { return mContext; }
+
     public void onAmbientModeChanged(boolean inAmbientMode, boolean lowBitAmbient) {
         mInAmbientMode = inAmbientMode;
         if (lowBitAmbient) {

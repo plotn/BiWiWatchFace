@@ -124,7 +124,6 @@ public class BatteryFaceElement extends AbstractFaceElement {
 
             @Override
             public void run() {
-                Log.d( LOG_TAG, "run" );
                 Intent batteryStatus = mContext.registerReceiver( null, mBatteryIntentFilter );
                 if (batteryStatus != null) {
                     int level = batteryStatus.getIntExtra( BatteryManager.EXTRA_LEVEL, -1 );
