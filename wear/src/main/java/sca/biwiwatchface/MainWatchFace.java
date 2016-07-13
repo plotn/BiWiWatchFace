@@ -376,6 +376,7 @@ public class MainWatchFace extends CanvasWatchFaceService {
                             DataItem cachedItem = dataItems.get(0);
                             Log.d( TAG, "onResult: cachedItem=" + cachedItem.getUri() );
                             mWeatherPaint.setDataItem( cachedItem );
+                            //sendDataItemStart( "/syncNow" );
                         } else {
                             sendDataItemStart( "/syncNow" );
                         }

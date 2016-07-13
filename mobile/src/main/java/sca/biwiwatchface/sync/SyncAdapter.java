@@ -193,9 +193,9 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
     }
 
     private static class ForecastSlice {
-        private int mLocalHourStart;
         private int mLocalHourEnd;
-        long mNextSliceUTCSeconds;
+        private long mUTCMillisStart;
+        private long mNextSliceUTCSeconds;
         private boolean hasValue;
         private int mConditionId;
         private float mMinTemp;
@@ -233,7 +233,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
 
         public JSONObject toJSONObject() throws JSONException {
             JSONObject sliceJSON = new JSONObject();
-            sliceJSON.put( "startHour", mLocalHourStart );
+            sliceJSON.put( "startUTCMillis", mUTCMillisStart );
             sliceJSON.put( "endHour", mLocalHourEnd );
             sliceJSON.put( "conditionId", mConditionId );
             sliceJSON.put( "minTemp", mMinTemp );
@@ -244,7 +244,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
 
         @Override
         public String toString() {
-            return "[" + mLocalHourStart + "-" + mLocalHourEnd + "] " + mConditionId
+            return "[->" + mLocalHourEnd + "] " + mConditionId
                     + "[" + mMinTemp + "°-" + mMaxTemp + "°]";
         }
 
@@ -268,8 +268,8 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
             calendar.set( Calendar.SECOND, 0 );
 
             ForecastSlice newSlice = new ForecastSlice();
-            newSlice.mLocalHourStart = localHour;
             newSlice.mLocalHourEnd = calendar.get( Calendar.HOUR_OF_DAY );
+            newSlice.mUTCMillisStart = utcMillis;
             newSlice.mNextSliceUTCSeconds = calendar.getTimeInMillis() / 1000;
             return newSlice;
         }

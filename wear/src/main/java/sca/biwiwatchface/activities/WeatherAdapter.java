@@ -12,6 +12,11 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Locale;
+
 import sca.biwiwatchface.data.Weather;
 
 public class WeatherAdapter extends BaseAdapter {
@@ -19,6 +24,9 @@ public class WeatherAdapter extends BaseAdapter {
 
     JSONArray mForecastArray;
     private static LayoutInflater inflater = null;
+
+    private DateFormat mDateFormat = new SimpleDateFormat("EEE H", Locale.getDefault());
+
 
     WeatherAdapter( Context context, String jsonString ) {
         inflater = (LayoutInflater) context.getSystemService( Context.LAYOUT_INFLATER_SERVICE);
@@ -66,8 +74,13 @@ public class WeatherAdapter extends BaseAdapter {
                             + forecast.getString( "minTemp" ) + "°";
             text1.setText( string1 );
 
-            String string2 = forecast.get( "cityName" ) + " "
-                    + forecast.getString( "startHour" ) + "h - "
+            long startUTCMillis = forecast.getLong( "startUTCMillis" );
+            Calendar calendar = Calendar.getInstance();
+            calendar.setTimeInMillis( startUTCMillis );
+            String szStartDate = mDateFormat.format(calendar.getTime());
+
+            String string2 = forecast.get( "cityName" ) + " | "
+                    + szStartDate + "h - "
                     + forecast.getString( "endHour" ) + "h";
             text2.setText( string2 );
         } catch ( JSONException e ) {
