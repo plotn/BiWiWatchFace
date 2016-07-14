@@ -1,3 +1,4 @@
 <resources>
-    <string name="app_name">BiWi Watch Face</string>
+    <string name="app_name" translatable="false">BiWi Watch Face</string>
+    <string name="providerName">Weather</string>
 </resources>

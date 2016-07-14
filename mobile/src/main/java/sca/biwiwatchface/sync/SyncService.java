@@ -62,7 +62,7 @@ public class SyncService extends Service {
     // An account type, in the form of a domain name
     public static final String ACCOUNT_TYPE = "biwiwatchface.sca";
     // The account name
-    public static final String ACCOUNT = "dummyaccount";
+    public static final String ACCOUNT = "BiWi";
 
     /**
      * Create a new dummy account for the sync adapter

@@ -23,6 +23,7 @@ public class WeatherAdapter extends BaseAdapter {
     private static final String TAG = WeatherAdapter.class.getSimpleName();
 
     JSONArray mForecastArray;
+    JSONObject mLocationJson;
     private static LayoutInflater inflater = null;
 
     private DateFormat mDateFormat = new SimpleDateFormat("EEE H", Locale.getDefault());
@@ -34,6 +35,7 @@ public class WeatherAdapter extends BaseAdapter {
         try {
             JSONObject json = new JSONObject( jsonString );
             mForecastArray = json.getJSONArray( "weather" );
+            mLocationJson = json.getJSONObject( "location" );
 
         } catch ( JSONException e ) {
             Log.e( TAG, "WeatherAdapter: ", e );
@@ -42,13 +44,16 @@ public class WeatherAdapter extends BaseAdapter {
 
     @Override
     public int getCount() {
-        return mForecastArray.length();
+        return mForecastArray.length() +1;
     }
 
     @Override
     public Object getItem( int position ) {
         try {
-            return mForecastArray.get( position );
+            if (position == 0) {
+                return mLocationJson;
+            }
+            return mForecastArray.get( position-1 );
         } catch ( JSONException e ) {
             Log.e( TAG, "WeatherAdapter: ", e );
         }
@@ -68,21 +73,28 @@ public class WeatherAdapter extends BaseAdapter {
         TextView text2 = (TextView) vi.findViewById(android.R.id.text2);
 
         try {
-            JSONObject forecast = (JSONObject) mForecastArray.get( position );
-            String string1 = Weather.conditionIdToUnicode( forecast.getInt( "conditionId") )+ " "
-                            + forecast.getString( "maxTemp" ) + "° | "
-                            + forecast.getString( "minTemp" ) + "°";
-            text1.setText( string1 );
 
-            long startUTCMillis = forecast.getLong( "startUTCMillis" );
-            Calendar calendar = Calendar.getInstance();
-            calendar.setTimeInMillis( startUTCMillis );
-            String szStartDate = mDateFormat.format(calendar.getTime());
+            if (position == 0) {
+                text1.setText( mLocationJson.getString( "cityName" ) );
+                text2.setText( String.format( "Lat: %s Lon: %s",
+                        mLocationJson.getDouble( "askedLat" ), mLocationJson.getDouble( "askedLon" ) ) );
 
-            String string2 = forecast.get( "cityName" ) + " | "
-                    + szStartDate + "h - "
-                    + forecast.getString( "endHour" ) + "h";
-            text2.setText( string2 );
+            } else {
+                JSONObject forecast = mForecastArray.getJSONObject( position-1 );
+                String string1 = String.format( "%s %s° | %s°",
+                        Weather.conditionIdToUnicode( forecast.getInt( "conditionId" ) ),
+                        forecast.getString( "maxTemp" ),
+                        forecast.getString( "minTemp" ) );
+                text1.setText( string1 );
+
+                long startUTCMillis = forecast.getLong( "startUTCMillis" );
+                Calendar calendar = Calendar.getInstance();
+                calendar.setTimeInMillis( startUTCMillis );
+                String szStartDate = mDateFormat.format( calendar.getTime() );
+
+                String string2 = String.format( "%s h - %sh", szStartDate, forecast.getString( "endHour" ) );
+                text2.setText( string2 );
+            }
         } catch ( JSONException e ) {
             Log.e( TAG, "WeatherAdapter: ", e );
         }

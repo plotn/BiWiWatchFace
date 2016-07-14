@@ -30,10 +30,11 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Calendar;
 
 import sca.biwiwatchface.AppInit;
 import sca.biwiwatchface.data.WeatherContract.WeatherEntry;
+import sca.biwiwatchface.model.ForecastLocation;
+import sca.biwiwatchface.model.ForecastSlice;
 
 /**
  * Handle the transfer of data between a server and an
@@ -89,8 +90,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
 
             Location location = getLocation( googleApiClient );
             getWeather( location );
-            sendWeatherToWatch(googleApiClient);
-
+            sendWeatherToWatch(location, googleApiClient);
         }
 
         googleApiClient.disconnect();
@@ -192,93 +192,8 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
         }
     }
 
-    private static class ForecastSlice {
-        private int mLocalHourEnd;
-        private long mUTCMillisStart;
-        private long mNextSliceUTCSeconds;
-        private boolean hasValue;
-        private int mConditionId;
-        private float mMinTemp;
-        private float mMaxTemp;
-        private String mCityName;
 
-        public static ForecastSlice buildCurrentSlice() {
-            return buildSlice( System.currentTimeMillis() );
-        }
-
-        public ForecastSlice buildNextSlice() {
-            return buildSlice( mNextSliceUTCSeconds*1000 );
-        }
-
-        public boolean isInSlice( long utcDateSeconds ) {
-            return utcDateSeconds < mNextSliceUTCSeconds;
-        }
-
-        public void merge( int conditionId, float minTemp, float maxTemp, String cityName ) {
-            if (!hasValue) {
-                mConditionId = conditionId;
-                mMinTemp = minTemp;
-                mMaxTemp = maxTemp;
-                mCityName = cityName;
-                hasValue = true;
-            } else {
-                mConditionId = Math.max( conditionId, mConditionId );
-                mMinTemp = Math.min( minTemp, mMinTemp );
-                mMaxTemp = Math.max( maxTemp, mMaxTemp );
-                if (! mCityName.contains( cityName )) {
-                    mCityName += ", " + cityName;
-                }
-            }
-        }
-
-        public JSONObject toJSONObject() throws JSONException {
-            JSONObject sliceJSON = new JSONObject();
-            sliceJSON.put( "startUTCMillis", mUTCMillisStart );
-            sliceJSON.put( "endHour", mLocalHourEnd );
-            sliceJSON.put( "conditionId", mConditionId );
-            sliceJSON.put( "minTemp", mMinTemp );
-            sliceJSON.put( "maxTemp", mMaxTemp );
-            sliceJSON.put( "cityName", mCityName );
-            return sliceJSON;
-        }
-
-        @Override
-        public String toString() {
-            return "[->" + mLocalHourEnd + "] " + mConditionId
-                    + "[" + mMinTemp + "°-" + mMaxTemp + "°]";
-        }
-
-        private static ForecastSlice buildSlice( long utcMillis ) {
-            Calendar calendar = Calendar.getInstance();
-            calendar.setTimeInMillis( utcMillis );
-            int localHour = calendar.get( Calendar.HOUR_OF_DAY );
-            if (localHour >= 20 ) {
-                calendar.add( Calendar.DAY_OF_YEAR, 1 );
-                calendar.set( Calendar.HOUR_OF_DAY, 8 );
-            } else {
-                int newLocalHour = 8;
-                if (localHour >= 8 && localHour < 14) {
-                    newLocalHour = 14;
-                } else if (localHour >= 14 && localHour < 20) {
-                    newLocalHour = 20;
-                }
-                calendar.set( Calendar.HOUR_OF_DAY, newLocalHour );
-            }
-            calendar.set( Calendar.MINUTE, 0 );
-            calendar.set( Calendar.SECOND, 0 );
-
-            ForecastSlice newSlice = new ForecastSlice();
-            newSlice.mLocalHourEnd = calendar.get( Calendar.HOUR_OF_DAY );
-            newSlice.mUTCMillisStart = utcMillis;
-            newSlice.mNextSliceUTCSeconds = calendar.getTimeInMillis() / 1000;
-            return newSlice;
-        }
-
-        private ForecastSlice() {}
-    }
-
-
-    private void sendWeatherToWatch( GoogleApiClient googleApiClient ) {
+    private void sendWeatherToWatch( Location location, GoogleApiClient googleApiClient ) {
         ContentResolver resolver = getContext().getContentResolver();
         Cursor cursor = resolver.query( WeatherEntry.CONTENT_URI, null, null, null, null );
 
@@ -288,6 +203,8 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
             final int idxMinTemp = cursor.getColumnIndex( WeatherEntry.COLUMN_MIN_TEMP );
             final int idxMaxTemp = cursor.getColumnIndex( WeatherEntry.COLUMN_MAX_TEMP );
             final int idxCityName = cursor.getColumnIndex( WeatherEntry.COLUMN_CITY_NAME );
+
+            ForecastLocation forecastLocation = new ForecastLocation( location );
 
             ForecastSlice currentSlice = ForecastSlice.buildCurrentSlice();
             ArrayList<ForecastSlice> lstSlices = new ArrayList<>( 6 );
@@ -299,11 +216,11 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
                     currentSlice = currentSlice.buildNextSlice();
                     lstSlices.add( currentSlice );
                 }
+                forecastLocation.merge( cursor.getString( idxCityName ) );
                 currentSlice.merge(
                         cursor.getInt( idxConditionId ),
                         cursor.getFloat( idxMinTemp ),
-                        cursor.getFloat( idxMaxTemp ),
-                        cursor.getString( idxCityName ));
+                        cursor.getFloat( idxMaxTemp ) );
             }
             cursor.close();
 
@@ -314,7 +231,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
                 }
                 JSONObject sentJson = new JSONObject();
                 sentJson.put( "weather", forecastJsonArray );
-                sentJson.put( "random", Math.random() );
+                sentJson.put( "location", forecastLocation.toJSONObject() );
                 Log.d( TAG, "sendWeatherToWatch: json" + sentJson.toString() );
 
                 PutDataMapRequest putDataMapRequest = PutDataMapRequest.create( "/weather" );
