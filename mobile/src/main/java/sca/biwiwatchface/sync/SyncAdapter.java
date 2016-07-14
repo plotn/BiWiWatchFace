@@ -138,7 +138,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
 
             InputStream inputStream = urlConnection.getInputStream();
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
-                StringBuffer buffer = new StringBuffer();
+                StringBuilder buffer = new StringBuilder();
                 String line;
                 while ((line = reader.readLine()) != null) {
                     buffer.append(line);
@@ -209,13 +209,14 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
 
             ForecastSlice currentSlice = ForecastSlice.buildCurrentSlice();
             ArrayList<ForecastSlice> lstSlices = new ArrayList<>( 6 );
-            lstSlices.add( currentSlice );
 
             while ( cursor.moveToNext() ) {
                 long dateSeconds = cursor.getLong( idxDate );
                 if ( !currentSlice.isInSlice( dateSeconds ) ) {
+                    if (currentSlice.hasValue()) {
+                        lstSlices.add( currentSlice );
+                    }
                     currentSlice = currentSlice.buildNextSlice();
-                    lstSlices.add( currentSlice );
                 }
                 forecastLocation.merge( cursor.getString( idxCityName ) );
                 currentSlice.merge(
@@ -223,6 +224,10 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
                         cursor.getFloat( idxMinTemp ),
                         cursor.getFloat( idxMaxTemp ) );
             }
+            if (currentSlice.hasValue()) {
+                lstSlices.add( currentSlice );
+            }
+
             cursor.close();
 
             try {

@@ -9,11 +9,10 @@ public class ForecastSlice {
     private int mLocalHourEnd;
     private long mUTCMillisStart;
     private long mNextSliceUTCSeconds;
-    private boolean hasValue;
+    private boolean mHasValue;
     private int mConditionId;
     private float mMinTemp;
     private float mMaxTemp;
-    private String mCityName;
 
     public static ForecastSlice buildCurrentSlice() {
         return buildSlice( System.currentTimeMillis() );
@@ -28,17 +27,19 @@ public class ForecastSlice {
     }
 
     public void merge( int conditionId, float minTemp, float maxTemp ) {
-        if ( !hasValue ) {
+        if ( !mHasValue ) {
             mConditionId = conditionId;
             mMinTemp = minTemp;
             mMaxTemp = maxTemp;
-            hasValue = true;
+            mHasValue = true;
         } else {
             mConditionId = Math.max( conditionId, mConditionId );
             mMinTemp = Math.min( minTemp, mMinTemp );
             mMaxTemp = Math.max( maxTemp, mMaxTemp );
         }
     }
+
+    public boolean hasValue() { return mHasValue; }
 
     public JSONObject toJSONObject() throws JSONException {
         JSONObject sliceJSON = new JSONObject();
@@ -47,7 +48,6 @@ public class ForecastSlice {
         sliceJSON.put( "conditionId", mConditionId );
         sliceJSON.put( "minTemp", mMinTemp );
         sliceJSON.put( "maxTemp", mMaxTemp );
-        sliceJSON.put( "cityName", mCityName );
         return sliceJSON;
     }
 
@@ -77,8 +77,8 @@ public class ForecastSlice {
         calendar.set( Calendar.SECOND, 0 );
 
         ForecastSlice newSlice = new ForecastSlice();
-        newSlice.mLocalHourEnd = calendar.get( Calendar.HOUR_OF_DAY );
         newSlice.mUTCMillisStart = utcMillis;
+        newSlice.mLocalHourEnd = calendar.get( Calendar.HOUR_OF_DAY );
         newSlice.mNextSliceUTCSeconds = calendar.getTimeInMillis() / 1000;
         return newSlice;
     }
