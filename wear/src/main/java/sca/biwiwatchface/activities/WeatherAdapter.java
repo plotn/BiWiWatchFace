@@ -17,6 +17,7 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Locale;
 
+import sca.biwiwatchface.common.model.ForecastSlice;
 import sca.biwiwatchface.data.Weather;
 
 public class WeatherAdapter extends BaseAdapter {
@@ -81,24 +82,23 @@ public class WeatherAdapter extends BaseAdapter {
 
             } else {
                 JSONObject forecast = mForecastArray.getJSONObject( position-1 );
+                ForecastSlice slice = ForecastSlice.ofJSONObject( forecast );
                 String string1 = String.format( "%s %s° | %s°",
-                        Weather.conditionIdToUnicode( forecast.getInt( "conditionId" ) ),
-                        forecast.getString( "maxTemp" ),
-                        forecast.getString( "minTemp" ) );
+                        Weather.conditionIdToUnicode( slice.getConditionId() ),
+                        Math.round(slice.getMaxTemp()),
+                        Math.round(slice.getMinTemp()) );
                 text1.setText( string1 );
 
-                long startUTCMillis = forecast.getLong( "startUTCMillis" );
                 Calendar calendar = Calendar.getInstance();
-                calendar.setTimeInMillis( startUTCMillis );
+                calendar.setTimeInMillis( slice.getUTCMillisStart() );
                 String szStartDate = mDateFormat.format( calendar.getTime() );
 
-                String string2 = String.format( "%s h - %sh", szStartDate, forecast.getString( "endHour" ) );
+                String string2 = String.format( "%sh - %sh", szStartDate, slice.getLocalHourEnd() );
                 text2.setText( string2 );
             }
         } catch ( JSONException e ) {
             Log.e( TAG, "WeatherAdapter: ", e );
         }
-
 
         return vi;
     }

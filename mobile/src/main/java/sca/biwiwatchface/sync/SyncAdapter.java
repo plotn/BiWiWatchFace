@@ -34,8 +34,8 @@ import java.util.ArrayList;
 import sca.biwiwatchface.AppInit;
 import sca.biwiwatchface.BuildConfig;
 import sca.biwiwatchface.data.WeatherContract.WeatherEntry;
-import sca.biwiwatchface.model.ForecastLocation;
-import sca.biwiwatchface.model.ForecastSlice;
+import sca.biwiwatchface.common.model.ForecastLocation;
+import sca.biwiwatchface.common.model.ForecastSlice;
 
 /**
  * Handle the transfer of data between a server and an

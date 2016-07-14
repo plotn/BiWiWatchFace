@@ -1,4 +1,4 @@
-package sca.biwiwatchface.model;
+package sca.biwiwatchface.common.model;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -6,6 +6,12 @@ import org.json.JSONObject;
 import java.util.Calendar;
 
 public class ForecastSlice {
+    private static final String FIELD_START_UTC_MILLIS = "startUTCMillis";
+    private static final String FIELD_END_LOCAL_HOUR = "endHour";
+    private static final String FIELD_CONDITION_ID = "conditionId";
+    private static final String FIELD_MIN_TEMP = "minTemp";
+    private static final String FIELD_MAX_TEMP = "maxTemp";
+
     private int mLocalHourEnd;
     private long mUTCMillisStart;
     private long mNextSliceUTCSeconds;
@@ -41,14 +47,44 @@ public class ForecastSlice {
 
     public boolean hasValue() { return mHasValue; }
 
+    public int getConditionId() {
+        return mConditionId;
+    }
+
+    public float getMinTemp() {
+        return mMinTemp;
+    }
+
+    public float getMaxTemp() {
+        return mMaxTemp;
+    }
+
+    public long getUTCMillisStart() {
+        return mUTCMillisStart;
+    }
+
+    public int getLocalHourEnd() {
+        return mLocalHourEnd;
+    }
+
     public JSONObject toJSONObject() throws JSONException {
         JSONObject sliceJSON = new JSONObject();
-        sliceJSON.put( "startUTCMillis", mUTCMillisStart );
-        sliceJSON.put( "endHour", mLocalHourEnd );
-        sliceJSON.put( "conditionId", mConditionId );
-        sliceJSON.put( "minTemp", mMinTemp );
-        sliceJSON.put( "maxTemp", mMaxTemp );
+        sliceJSON.put( FIELD_START_UTC_MILLIS, mUTCMillisStart );
+        sliceJSON.put( FIELD_END_LOCAL_HOUR, mLocalHourEnd );
+        sliceJSON.put( FIELD_CONDITION_ID, mConditionId );
+        sliceJSON.put( FIELD_MIN_TEMP, mMinTemp );
+        sliceJSON.put( FIELD_MAX_TEMP, mMaxTemp );
         return sliceJSON;
+    }
+
+    public static ForecastSlice ofJSONObject( JSONObject json ) throws JSONException {
+        ForecastSlice slice = new ForecastSlice();
+        slice.mUTCMillisStart = json.getLong( FIELD_START_UTC_MILLIS );
+        slice.mLocalHourEnd = json.getInt( FIELD_END_LOCAL_HOUR );
+        slice.mConditionId = json.getInt( FIELD_CONDITION_ID );
+        slice.mMinTemp = (float) json.getDouble( FIELD_MIN_TEMP );
+        slice.mMaxTemp = (float) json.getDouble( FIELD_MAX_TEMP );
+        return slice;
     }
 
     @Override

@@ -21,6 +21,7 @@ import java.util.Calendar;
 
 import sca.biwiwatchface.activities.WeatherActivity;
 import sca.biwiwatchface.data.Weather;
+import sca.biwiwatchface.common.model.ForecastSlice;
 
 public class WeatherFaceElement extends AbstractFaceElement {
 
@@ -28,8 +29,9 @@ public class WeatherFaceElement extends AbstractFaceElement {
 
     private Paint mWeatherPaint;
 
-    private String mWeatherJsonString = "{}";
+    private String mWeatherJsonString = null;
     private String mDisplayedString = "";
+    private long mNextSliceUTCMillis;
     private int mLastYDraw;
 
     public WeatherFaceElement( Context context) {
@@ -57,6 +59,10 @@ public class WeatherFaceElement extends AbstractFaceElement {
     }
 
     public void drawTime( Canvas canvas, Calendar calendar, int x, int y) {
+        long nowUTCMillis = calendar.getTimeInMillis();
+        if (mNextSliceUTCMillis > 0 && nowUTCMillis >= mNextSliceUTCMillis) {
+            cacheDisplayedWeather( nowUTCMillis );
+        }
         canvas.drawText( mDisplayedString, x, y, mWeatherPaint );
         mLastYDraw = y;
     }
@@ -69,20 +75,39 @@ public class WeatherFaceElement extends AbstractFaceElement {
         mWeatherJsonString = dataMap.getString( "json" );
         Log.d( TAG, "setDataItem: " + mWeatherJsonString );
 
-        try {
-            JSONObject json = new JSONObject( mWeatherJsonString );
-            JSONArray forecastArray = json.getJSONArray( "weather" );
-            if (forecastArray.length() > 0 ) {
-                JSONObject forecast = forecastArray.getJSONObject( 0 );
-                int conditionId = forecast.getInt( "conditionId");
-                mDisplayedString +=
-                        Weather.conditionIdToUnicode( conditionId )+ " "
-                        + forecast.getString( "maxTemp" ) + "° | "
-                        + forecast.getString( "minTemp" ) + "°"
-                ;
+        cacheDisplayedWeather( System.currentTimeMillis() );
+    }
+
+    public void cacheDisplayedWeather( long nowUTCMillis ) {
+        mDisplayedString = "";
+        if (mWeatherJsonString != null ) {
+            try {
+                JSONObject json = new JSONObject( mWeatherJsonString );
+                JSONArray forecastArray = json.getJSONArray( "weather" );
+                if ( forecastArray.length() > 0 ) {
+                    JSONObject forecast = forecastArray.getJSONObject( 0 );
+                    ForecastSlice nowSlice = ForecastSlice.ofJSONObject( forecast );
+
+                    for ( int i = 1; i < forecastArray.length(); i++ ) {
+                        forecast = forecastArray.getJSONObject( i );
+                        ForecastSlice slice = ForecastSlice.ofJSONObject( forecast );
+                        long sliceStartUTCMillis = slice.getUTCMillisStart();
+                        if ( sliceStartUTCMillis <= nowUTCMillis ) {
+                            nowSlice = slice;
+                        } else {
+                            mNextSliceUTCMillis = sliceStartUTCMillis;
+                            break;
+                        }
+                    }
+
+                    mDisplayedString = String.format( "%s %s° | %s°",
+                            Weather.conditionIdToUnicode( nowSlice.getConditionId() ),
+                            Math.round(nowSlice.getMaxTemp()),
+                            Math.round(nowSlice.getMinTemp()) );
+                }
+            } catch ( JSONException e ) {
+                Log.e( TAG, "setDataItem: ", e );
             }
-        } catch ( JSONException e ) {
-            Log.e( TAG, "setDataItem: ", e );
         }
     }
 

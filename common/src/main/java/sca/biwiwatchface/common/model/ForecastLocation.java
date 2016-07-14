@@ -1,4 +1,4 @@
-package sca.biwiwatchface.model;
+package sca.biwiwatchface.common.model;
 
 
 import android.location.Location;
