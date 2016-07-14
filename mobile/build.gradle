@@ -1,4 +1,5 @@
 apply plugin: 'com.android.application'
+apply from: '../local.gradle'
 
 android {
     compileSdkVersion 23
@@ -17,6 +18,11 @@ android {
             shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
+    }
+    buildTypes.each {
+        // Put in root/local.gradle:
+        // ext.OPEN_WEATHER_MAP_API_KEY = '"yourApiKey"'
+        it.buildConfigField 'String', 'OPEN_WEATHER_MAP_API_KEY', OPEN_WEATHER_MAP_API_KEY
     }
 }
 

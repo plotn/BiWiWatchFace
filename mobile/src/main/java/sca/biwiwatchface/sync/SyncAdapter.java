@@ -32,6 +32,7 @@ import java.net.URL;
 import java.util.ArrayList;
 
 import sca.biwiwatchface.AppInit;
+import sca.biwiwatchface.BuildConfig;
 import sca.biwiwatchface.data.WeatherContract.WeatherEntry;
 import sca.biwiwatchface.model.ForecastLocation;
 import sca.biwiwatchface.model.ForecastSlice;
@@ -123,9 +124,9 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
                 .appendQueryParameter( "lon", Double.toString( location.getLongitude() ) )
                 .appendQueryParameter( "units", "metric" )
                 .appendQueryParameter( "cnt", Integer.toString( NUM_REPORTS ) )
-                .appendQueryParameter( "appid", "bfd9ed7936c70546a34990813b7f085e" )
+                .appendQueryParameter( "appid", BuildConfig.OPEN_WEATHER_MAP_API_KEY )
                 .build();
-        Log.d( TAG, "getWeather: " + builtUri );
+        Log.d( TAG, "getWeather: " + builtUri.toString().replace( BuildConfig.OPEN_WEATHER_MAP_API_KEY, "****" ) );
 
         HttpURLConnection urlConnection = null;
 
