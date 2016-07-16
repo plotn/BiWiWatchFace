@@ -171,11 +171,8 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
             }
 
             ContentResolver resolver = getContext().getContentResolver();
+            resolver.delete( WeatherEntry.CONTENT_URI, null, null );
             resolver.bulkInsert( WeatherEntry.CONTENT_URI, tbCVForecast );
-
-            String nowSeconds = Long.toString( System.currentTimeMillis() / 1000 );
-            resolver.delete( WeatherEntry.CONTENT_URI, WeatherEntry.COLUMN_DATE + "<= ?", new String[]{nowSeconds} );
-
         } catch ( JSONException e ) {
             Log.e( TAG, "parseWeatherJson: ", e );
         }
