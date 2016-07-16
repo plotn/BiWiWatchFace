@@ -33,9 +33,9 @@ import java.util.ArrayList;
 
 import sca.biwiwatchface.AppInit;
 import sca.biwiwatchface.BuildConfig;
-import sca.biwiwatchface.data.WeatherContract.WeatherEntry;
 import sca.biwiwatchface.common.model.ForecastLocation;
 import sca.biwiwatchface.common.model.ForecastSlice;
+import sca.biwiwatchface.data.WeatherContract.WeatherEntry;
 
 /**
  * Handle the transfer of data between a server and an
@@ -80,33 +80,21 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
 
     @Override
     public void onPerformSync( Account account, Bundle extras, String authority, ContentProviderClient provider, SyncResult syncResult ) {
+        AppInit.onStartup(getContext());
         Log.d( TAG, "onPerformSync" );
-
         GoogleApiClient googleApiClient = new GoogleApiClient.Builder( getContext() )
                 .addApi( LocationServices.API )
                 .addApi( Wearable.API )
                 .build();
         ConnectionResult connectionResult = googleApiClient.blockingConnect();
         if (connectionResult.isSuccess()) {
-
-            Location location = getLocation( googleApiClient );
+            LocationProvider locationProvider = new LocationProvider();
+            Location location = locationProvider.getLocation( googleApiClient );
             getWeather( location );
             sendWeatherToWatch(location, googleApiClient);
         }
 
         googleApiClient.disconnect();
-    }
-
-    private Location getLocation( GoogleApiClient googleApiClient ) {
-        Location resLocation = null;
-        try {
-            AppInit.configureLocationApi( googleApiClient );
-            resLocation = LocationServices.FusedLocationApi.getLastLocation( googleApiClient );
-            Log.d( TAG, "getLastLocation: " + resLocation );
-        } catch (SecurityException e) {
-            Log.w( TAG, "onConnected: ", e );
-        }
-        return resLocation;
     }
 
     private void getWeather( Location location ) {
@@ -183,10 +171,10 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
             }
 
             ContentResolver resolver = getContext().getContentResolver();
-            int numRowCreated = resolver.bulkInsert( WeatherEntry.CONTENT_URI, tbCVForecast );
+            resolver.bulkInsert( WeatherEntry.CONTENT_URI, tbCVForecast );
 
             String nowSeconds = Long.toString( System.currentTimeMillis() / 1000 );
-            int numRowDeleted = resolver.delete( WeatherEntry.CONTENT_URI, WeatherEntry.COLUMN_DATE + "<= ?", new String[]{nowSeconds} );
+            resolver.delete( WeatherEntry.CONTENT_URI, WeatherEntry.COLUMN_DATE + "<= ?", new String[]{nowSeconds} );
 
         } catch ( JSONException e ) {
             Log.e( TAG, "parseWeatherJson: ", e );

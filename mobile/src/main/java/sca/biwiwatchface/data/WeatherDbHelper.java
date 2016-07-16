@@ -30,7 +30,7 @@ public class WeatherDbHelper extends SQLiteOpenHelper {
 
                 // To assure the application have just one weather entry per day
                 // per location, it's created a UNIQUE constraint with REPLACE strategy
-                " UNIQUE (" + WeatherEntry.COLUMN_DATE + ", " + WeatherEntry.COLUMN_CITY_NAME + ") ON CONFLICT REPLACE);";
+                " UNIQUE (" + WeatherEntry.COLUMN_DATE + ") ON CONFLICT REPLACE);";
 
         db.execSQL( SQL_CREATE_WEATHER_TABLE );
     }

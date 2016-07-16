@@ -28,8 +28,6 @@ public class FaceListenerService extends WearableListenerService {
                 .addApi(Wearable.API)
                 .build();
         mGoogleApiClient.connect();
-
-        AppInit.onStartup(this);
     }
 
     @Override
