@@ -16,7 +16,7 @@ import sca.biwiwatchface.AppInit;
 
 public class LocationProvider implements LocationListener {
 
-    private static final String TAG = LocationProvider.class.getSimpleName();
+    private static final String TAG = "SBWWF LocationProvider";
     private static final double MAX_AGE_LAST_LOCATION_MILLIS = 60*60*1000;
 
     private static final long UPDATE_INTERVAL_IN_MILLISECONDS = 10000;
@@ -32,7 +32,7 @@ public class LocationProvider implements LocationListener {
             Log.d( TAG, "getLocation: lastLocation=" + lastLocation );
             boolean validLastLocation = ( lastLocation != null
                     && ( (System.currentTimeMillis()-lastLocation.getTime()) < MAX_AGE_LAST_LOCATION_MILLIS) );
-            Log.d( TAG, "getLocation: needFixRequest=" + validLastLocation + " " + (System.currentTimeMillis()-lastLocation.getTime()) );
+            Log.d( TAG, "getLocation: validLastLocation=" + validLastLocation );
             if (validLastLocation) {
                 return lastLocation;
             } else {

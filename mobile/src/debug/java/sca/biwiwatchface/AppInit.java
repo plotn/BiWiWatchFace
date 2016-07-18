@@ -22,7 +22,6 @@ public class AppInit {
         try {
             LocationServices.FusedLocationApi.setMockMode( googleApiClient, true );
             Location mockLocation = MockLocationProvider.getLocation( LocationManager.NETWORK_PROVIDER, 45.193, 5.768 );
-            //Location mockLocation = MockLocationProvider.getLocation( LocationManager.NETWORK_PROVIDER, 45.193, 6.768 );
             LocationServices.FusedLocationApi.setMockLocation( googleApiClient, mockLocation  );
         } catch (SecurityException e) {
             Log.w( TAG, "configureLocationApi: ", e );

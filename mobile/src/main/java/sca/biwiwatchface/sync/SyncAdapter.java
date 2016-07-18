@@ -43,7 +43,7 @@ import sca.biwiwatchface.data.WeatherContract.WeatherEntry;
  */
 public class SyncAdapter extends AbstractThreadedSyncAdapter {
 
-    private static final String TAG = SyncAdapter.class.getSimpleName();
+    private static final String TAG = "SBWWF SyncAdapter";
 
 
     // Define a variable to contain a content resolver instance
@@ -142,7 +142,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
         } finally {
             if (urlConnection != null) urlConnection.disconnect();
         }
-
+        Log.d( TAG, "getWeatherJson: resJons=" + resJson);
         return resJson;
     }
 
@@ -154,6 +154,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
             String cityName = cityJson.getString( "name" );
 
             JSONArray forecastJsonArray = json.getJSONArray( "list" );
+            Log.d( TAG, "parseWeatherJson: jsonarray.length=" + forecastJsonArray.length() );
             ContentValues tbCVForecast[] = new ContentValues[forecastJsonArray.length()];
             for (int i = 0; i<forecastJsonArray.length(); i++) {
                 JSONObject forecastJson = forecastJsonArray.getJSONObject( i );
@@ -195,6 +196,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
             ForecastSlice currentSlice = ForecastSlice.buildCurrentSlice();
             ArrayList<ForecastSlice> lstSlices = new ArrayList<>( 6 );
 
+            Log.d( TAG, "sendWeatherToWatch: cursor.getCount()=" + cursor.getCount());
             while ( cursor.moveToNext() ) {
                 long dateSeconds = cursor.getLong( idxDate );
                 if ( !currentSlice.isInSlice( dateSeconds ) ) {
