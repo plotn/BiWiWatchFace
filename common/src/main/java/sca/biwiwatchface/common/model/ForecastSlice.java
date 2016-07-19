@@ -11,6 +11,7 @@ public class ForecastSlice {
     private static final String FIELD_CONDITION_ID = "conditionId";
     private static final String FIELD_MIN_TEMP = "minTemp";
     private static final String FIELD_MAX_TEMP = "maxTemp";
+    private static final String FIELD_FETCH_TS = "fetchTs";
 
     private int mLocalHourEnd;
     private long mUTCMillisStart;
@@ -19,6 +20,7 @@ public class ForecastSlice {
     private int mConditionId;
     private float mMinTemp;
     private float mMaxTemp;
+    private long mFetchTimestampUTCMillis;
 
     public static ForecastSlice buildCurrentSlice() {
         return buildSlice( System.currentTimeMillis() );
@@ -32,16 +34,18 @@ public class ForecastSlice {
         return utcDateSeconds < mNextSliceUTCSeconds;
     }
 
-    public void merge( int conditionId, float minTemp, float maxTemp ) {
+    public void merge( int conditionId, float minTemp, float maxTemp, long fetchTimestampUTCMillis ) {
         if ( !mHasValue ) {
             mConditionId = conditionId;
             mMinTemp = minTemp;
             mMaxTemp = maxTemp;
+            mFetchTimestampUTCMillis = fetchTimestampUTCMillis;
             mHasValue = true;
         } else {
             mConditionId = Math.max( conditionId, mConditionId );
             mMinTemp = Math.min( minTemp, mMinTemp );
             mMaxTemp = Math.max( maxTemp, mMaxTemp );
+            mFetchTimestampUTCMillis = Math.min( mFetchTimestampUTCMillis, fetchTimestampUTCMillis );
         }
     }
 
@@ -67,6 +71,8 @@ public class ForecastSlice {
         return mLocalHourEnd;
     }
 
+    public long getFetchTimestampUTCMillis() { return mFetchTimestampUTCMillis; }
+
     public JSONObject toJSONObject() throws JSONException {
         JSONObject sliceJSON = new JSONObject();
         sliceJSON.put( FIELD_START_UTC_MILLIS, mUTCMillisStart );
@@ -74,6 +80,7 @@ public class ForecastSlice {
         sliceJSON.put( FIELD_CONDITION_ID, mConditionId );
         sliceJSON.put( FIELD_MIN_TEMP, mMinTemp );
         sliceJSON.put( FIELD_MAX_TEMP, mMaxTemp );
+        sliceJSON.put( FIELD_FETCH_TS, mFetchTimestampUTCMillis );
         return sliceJSON;
     }
 
@@ -84,6 +91,7 @@ public class ForecastSlice {
         slice.mConditionId = json.getInt( FIELD_CONDITION_ID );
         slice.mMinTemp = (float) json.getDouble( FIELD_MIN_TEMP );
         slice.mMaxTemp = (float) json.getDouble( FIELD_MAX_TEMP );
+        slice.mFetchTimestampUTCMillis = json.getLong( FIELD_FETCH_TS );
         return slice;
     }
 

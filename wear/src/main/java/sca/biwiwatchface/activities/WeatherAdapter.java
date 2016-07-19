@@ -17,6 +17,7 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Locale;
 
+import sca.biwiwatchface.R;
 import sca.biwiwatchface.common.model.ForecastSlice;
 import sca.biwiwatchface.data.Weather;
 
@@ -25,13 +26,15 @@ public class WeatherAdapter extends BaseAdapter {
 
     JSONArray mForecastArray;
     JSONObject mLocationJson;
-    private static LayoutInflater inflater = null;
+    private static LayoutInflater mInflater = null;
 
     private DateFormat mDateFormat = new SimpleDateFormat("EEE H", Locale.getDefault());
-
+    private Context mContext;
 
     WeatherAdapter( Context context, String jsonString ) {
-        inflater = (LayoutInflater) context.getSystemService( Context.LAYOUT_INFLATER_SERVICE);
+        mContext = context;
+
+        mInflater = (LayoutInflater) context.getSystemService( Context.LAYOUT_INFLATER_SERVICE);
 
         try {
             JSONObject json = new JSONObject( jsonString );
@@ -69,10 +72,11 @@ public class WeatherAdapter extends BaseAdapter {
     @Override
     public View getView( int position, View convertView, ViewGroup parent ) {
         View vi = convertView;
-        if (convertView == null) vi = inflater.inflate( android.R.layout.simple_list_item_2, null);
+        if (convertView == null) vi = mInflater.inflate( android.R.layout.simple_list_item_2, null);
         TextView text1 = (TextView) vi.findViewById(android.R.id.text1);
         TextView text2 = (TextView) vi.findViewById(android.R.id.text2);
 
+        long now = System.currentTimeMillis();
         try {
 
             if (position == 0) {
@@ -93,7 +97,15 @@ public class WeatherAdapter extends BaseAdapter {
                 calendar.setTimeInMillis( slice.getUTCMillisStart() );
                 String szStartDate = mDateFormat.format( calendar.getTime() );
 
-                String string2 = String.format( "%sh - %sh", szStartDate, slice.getLocalHourEnd() );
+                String ageWarning = "";
+                final int MILLIS_IN_HOUR = 60*60*1000;
+                long fetchTs = slice.getFetchTimestampUTCMillis();
+                long ageInHour = (now-fetchTs)/MILLIS_IN_HOUR;
+                if (ageInHour > 3) {
+                    ageWarning = "(" + String.format( mContext.getString( R.string.format_weather_age_warning ), ageInHour ) +")";
+                }
+
+                String string2 = String.format( "%sh - %sh%s", szStartDate, slice.getLocalHourEnd(), ageWarning );
                 text2.setText( string2 );
             }
         } catch ( JSONException e ) {

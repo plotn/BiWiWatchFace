@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">BiWi Watch Face</string>
     <string name="today">Auj</string>
     <string name="tomorrow">Dem</string>
+    <string name="format_weather_age_warning">il y a %1$dh</string>
+    <string name="title_activity_weather">Prévisions météo</string>
 </resources>

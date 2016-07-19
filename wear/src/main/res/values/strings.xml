@@ -1,9 +1,9 @@
 <resources>
-    <string name="app_name">BiWi Watch Face</string>
-    <string name="biwi">BiWi</string>
+    <string name="app_name" translatable="false">BiWi Watch Face</string>
+    <string name="biwi" translatable="false">BiWi</string>
     <string name="today">Tod</string>
     <string name="tomorrow">Tom</string>
-    <string name="title_activity_weather">WeatherActivity</string>
-    <string name="hello_round">Hello Round World!</string>
-    <string name="hello_square">Hello Square World!</string>
+    <string name="title_activity_weather">Weather forecast</string>
+    <string name="hello_square" translatable="false">Hello Square World!</string>
+    <string name="format_weather_age_warning">%1$dh ago</string>
 </resources>
