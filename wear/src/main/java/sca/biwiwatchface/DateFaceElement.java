@@ -47,10 +47,17 @@ public class DateFaceElement extends AbstractFaceElement {
         mDateHalfHeight = rcBounds.height() / 2.0f;
     }
 
+    private String mCachedDateString;
+    private int mLastDayOfYear;
+
     public void drawTime( Canvas canvas, Calendar calendar, int x, int y) {
         if (isInInteractiveMode()) {
-            String szDate = mDateFormat.format(calendar.getTime());
-            canvas.drawText( szDate, x, y + mDateHalfHeight, mDatePaint );
+            int dayOfYear = calendar.get( Calendar.DAY_OF_YEAR );
+            if (mCachedDateString == null || mLastDayOfYear != dayOfYear) {
+                mCachedDateString = mDateFormat.format(calendar.getTime());
+                mLastDayOfYear = dayOfYear;
+            }
+            canvas.drawText( mCachedDateString, x, y + mDateHalfHeight, mDatePaint );
         }
     }
 

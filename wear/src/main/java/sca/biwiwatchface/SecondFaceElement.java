@@ -8,7 +8,6 @@ import android.graphics.Typeface;
 import android.view.WindowInsets;
 
 import java.util.Calendar;
-import java.util.Locale;
 
 public class SecondFaceElement extends AbstractFaceElement {
 
@@ -49,7 +48,9 @@ public class SecondFaceElement extends AbstractFaceElement {
     @Override
     public void drawTime( Canvas canvas, Calendar calendar, int x, int y) {
         if ( isInInteractiveMode() ) {
-            String szSecond = String.format( Locale.US, "%02d", calendar.get(Calendar.SECOND) );
+            int seconds =  calendar.get(Calendar.SECOND);
+            String szSecond = Integer.toString( seconds );
+            if  (seconds<10) szSecond = "0" + szSecond; // Faster to do it manually than using a "%02d" format
             canvas.drawText( szSecond, x, y + mSecondHalfHeight, mSecondPaint );
         }
     }

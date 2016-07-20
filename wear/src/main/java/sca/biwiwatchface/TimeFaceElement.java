@@ -69,10 +69,24 @@ public class TimeFaceElement extends AbstractFaceElement {
         mColonPaint.setAntiAlias(enabled);
     }
 
+    private CachedStringFromLong mCachedHourString = new CachedStringFromLong( new CachedStringFromLong.StringFormatter() {
+        @Override
+        public String computeString( long value ) {
+            return Long.toString( value );
+        }
+    } );
+
+    private CachedStringFromLong mCachedMinuteString = new CachedStringFromLong( new CachedStringFromLong.StringFormatter() {
+        @Override
+        public String computeString( long value ) {
+            return String.format(Locale.US, "%02d", value );
+        }
+    } );
+
     @Override
     public void drawTime( Canvas canvas, Calendar calendar, int x, int y) {
-        String szHour = Integer.toString( calendar.get(Calendar.HOUR_OF_DAY) );
-        String szMinute = String.format(Locale.US, "%02d", calendar.get(Calendar.MINUTE) );
+        String szHour = mCachedHourString.getString( calendar.get(Calendar.HOUR_OF_DAY) );
+        String szMinute = mCachedMinuteString.getString( calendar.get(Calendar.MINUTE) );
 
         float hourWidth = mHourPaint.measureText(szHour);
         float minuteWidth = mMinutePaint.measureText(szMinute);

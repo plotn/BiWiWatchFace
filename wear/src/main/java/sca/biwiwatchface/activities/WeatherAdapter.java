@@ -102,7 +102,7 @@ public class WeatherAdapter extends BaseAdapter {
                 long fetchTs = slice.getFetchTimestampUTCMillis();
                 long ageInHour = (now-fetchTs)/MILLIS_IN_HOUR;
                 if (ageInHour > 3) {
-                    ageWarning = "(" + String.format( mContext.getString( R.string.format_weather_age_warning ), ageInHour ) +")";
+                    ageWarning = " (" + String.format( mContext.getString( R.string.format_weather_age_warning ), ageInHour ) +")";
                 }
 
                 String string2 = String.format( "%sh - %sh%s", szStartDate, slice.getLocalHourEnd(), ageWarning );

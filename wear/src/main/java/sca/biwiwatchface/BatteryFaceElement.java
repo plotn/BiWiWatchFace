@@ -12,7 +12,6 @@ import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.Typeface;
 import android.os.BatteryManager;
-import android.util.Log;
 import android.view.WindowInsets;
 
 import java.util.Calendar;
@@ -90,12 +89,19 @@ public class BatteryFaceElement extends AbstractFaceElement {
         mScaledBitmap = Bitmap.createScaledBitmap( bitmap, mScaledBmpWidth, mScaledBmpHeight, false);
     }
 
+    private CachedStringFromLong mCachedBatteryString = new CachedStringFromLong( new CachedStringFromLong.StringFormatter() {
+        @Override
+        public String computeString( long value ) {
+            return String.format( Locale.US, "%02d%%", value );
+        }
+    } );
+
     public void drawTime( Canvas canvas, Calendar calendar, int x, int y) {
         if (isInInteractiveMode()) {
             canvas.drawBitmap( mScaledBitmap, x, y - mScaledBmpHeight / 2, mBitmapPaint );
 
             int batteryPct = mBatteryInfo.getBatteryPct();
-            String szBattery = String.format( Locale.US, "%02d%%", batteryPct );
+            String szBattery = mCachedBatteryString.getString( batteryPct );
             canvas.drawText( szBattery, x + mScaledBmpWidth, y + mBatteryHalfHeight, mBatteryPaint );
         }
     }
