@@ -363,6 +363,7 @@ public class MainWatchFace extends CanvasWatchFaceService {
             public void suspend() {
                 Log.d( TAG, "suspend: " );
                 if (mGoogleApiClient.isConnected() || mGoogleApiClient.isConnecting()) {
+                    Wearable.DataApi.removeListener( mGoogleApiClient, this );
                     mGoogleApiClient.disconnect();
                 }
             }
