@@ -170,16 +170,18 @@ public class MainWatchFace extends CanvasWatchFaceService {
 
         @Override
         public void onVisibilityChanged(boolean visible) {
-            //Log.d( TAG, "onVisibilityChanged " + visible );
+            Log.d( TAG, "onVisibilityChanged " + visible );
             super.onVisibilityChanged(visible);
 
             if (visible) {
                 registerReceiver();
                 startSync();
+                mMobileLink.resume();
 
                 // Update time zone in case it changed while we weren't visible.
                 mCalendar.setTimeZone(TimeZone.getDefault());
             } else {
+                mMobileLink.suspend();
                 stopSync();
                 unregisterReceiver();
             }
@@ -240,6 +242,8 @@ public class MainWatchFace extends CanvasWatchFaceService {
                 for (AbstractFaceElement element : mLstFaceElement) {
                     element.onAmbientModeChanged( mAmbient, mLowBitAmbient );
                 }
+                if (mAmbient) mMobileLink.suspend();
+                else mMobileLink.resume();
                 stopSync();
                 startSync();
                 invalidate();
@@ -343,6 +347,8 @@ public class MainWatchFace extends CanvasWatchFaceService {
         private class MobileLink implements DataApi.DataListener,
                 GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener,
                 ResultCallback<DataApi.DataItemResult> {
+
+            private static final String TAG = "MobileLink";
             private GoogleApiClient mGoogleApiClient;
 
 
@@ -352,7 +358,20 @@ public class MainWatchFace extends CanvasWatchFaceService {
                         .addConnectionCallbacks( this )
                         .addOnConnectionFailedListener( this )
                         .build();
-                mGoogleApiClient.connect();
+            }
+
+            public void suspend() {
+                Log.d( TAG, "suspend: " );
+                if (mGoogleApiClient.isConnected() || mGoogleApiClient.isConnecting()) {
+                    mGoogleApiClient.disconnect();
+                }
+            }
+
+            public void resume() {
+                Log.d( TAG, "resume: " );
+                if ( ! (mGoogleApiClient.isConnected() || mGoogleApiClient.isConnecting()) ) {
+                    mGoogleApiClient.connect();
+                }
             }
 
             public void onDestroy() {
@@ -364,7 +383,6 @@ public class MainWatchFace extends CanvasWatchFaceService {
             public void onConnected( @Nullable Bundle connectionHint ) {
                 Log.d( TAG, "onConnected: " + connectionHint );
                 // Now you can use the Data Layer API
-                sendDataItemStart("/faceStarted");
                 Wearable.DataApi.addListener(mGoogleApiClient, this);
 
                 Uri test = Uri.parse( "wear://*/weather" );
@@ -376,8 +394,8 @@ public class MainWatchFace extends CanvasWatchFaceService {
                             DataItem cachedItem = dataItems.get(0);
                             Log.d( TAG, "onResult: cachedItem=" + cachedItem.getUri() );
                             mWeatherPaint.setDataItem( cachedItem );
-                            //sendDataItemStart( "/syncNow" );
                         } else {
+                            sendDataItemStart("/faceStarted");
                             sendDataItemStart( "/syncNow" );
                         }
                         dataItems.release();
@@ -412,7 +430,6 @@ public class MainWatchFace extends CanvasWatchFaceService {
 
             private void sendDataItemStart( String path ) {
                 PutDataMapRequest putDataMapRequest = PutDataMapRequest.create(path);
-                putDataMapRequest.getDataMap().putInt("random", (int) (100000*Math.random()) );
                 PutDataRequest request = putDataMapRequest.asPutDataRequest();
                 request.setUrgent();
 
