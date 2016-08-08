@@ -30,31 +30,51 @@ import sca.biwiwatchface.R;
 public class MeetingInfoProvider {
     private static final String LOG_TAG = MeetingInfoProvider.class.getSimpleName();
 
+    public enum CalendarPermission {
+        UNKNOWN, GRANTED, DENIED
+    }
+
+    public interface ChangeListener {
+        void onChange();
+    }
+
+    private CalendarPermission mCalendarPermission = CalendarPermission.UNKNOWN;
+
     private AtomicReference<ArrayList<Meeting>> mLstMeetings = new AtomicReference<>();
+    private ChangeListener mChangeListener;
 
     private Context mContext;
     ScheduledExecutorService mExecutor;
     private boolean syncing;
 
-    private Runnable mLoaderRunnable;
+    private MeetingLoader mLoader;
     private BroadcastReceiver mBroadcastReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive( Context context, Intent intent ) {
             if (Intent.ACTION_PROVIDER_CHANGED.equals(intent.getAction())
                     && WearableCalendarContract.CONTENT_URI.equals(intent.getData())) {
                 Log.d( LOG_TAG, "onReceive" );
-                mExecutor.execute( mLoaderRunnable );
+                mExecutor.execute( mLoader );
             }
         }
     };
 
     public MeetingInfoProvider( Context context ) {
         mContext = context;
-        mLoaderRunnable = new MeetingLoader( mContext, mLstMeetings );
+        mLoader = new MeetingLoader( mContext, mLstMeetings );
+    }
+
+    public CalendarPermission getCalendarPermission() {
+        return mCalendarPermission;
     }
 
     public ArrayList<Meeting> getLstMeetings() {
         return mLstMeetings.get();
+    }
+
+    public void setChangeListener( ChangeListener changeListener ) {
+        mChangeListener = changeListener;
+        mLoader.setChangeListener( changeListener );
     }
 
     public void startSync( ScheduledExecutorService executor ) {
@@ -63,12 +83,15 @@ public class MeetingInfoProvider {
         boolean permissionGranted = ActivityCompat.checkSelfPermission( mContext, Manifest.permission.READ_CALENDAR) == PackageManager.PERMISSION_GRANTED;
 
         if (permissionGranted && ! syncing) {
+            mCalendarPermission = CalendarPermission.GRANTED;
             IntentFilter filter = new IntentFilter( Intent.ACTION_PROVIDER_CHANGED );
             filter.addDataScheme( "content" );
             filter.addDataAuthority( WearableCalendarContract.AUTHORITY, null );
             mContext.registerReceiver( mBroadcastReceiver, filter );
-            mExecutor.scheduleWithFixedDelay( mLoaderRunnable, 0, 60, TimeUnit.SECONDS );
+            mExecutor.scheduleWithFixedDelay( mLoader, 0, 60, TimeUnit.SECONDS );
             syncing = true;
+        } else if (! permissionGranted) {
+            mCalendarPermission = CalendarPermission.DENIED;
         }
     }
 
@@ -84,9 +107,9 @@ public class MeetingInfoProvider {
     private static class MeetingLoader implements Runnable {
         private Context mContext;
         private AtomicReference<ArrayList<Meeting>> mLstMeetings;
+        private ChangeListener mChangeListener;
 
         private DateFormat mTimeFormat = new SimpleDateFormat("H:mm", Locale.getDefault());
-        private PowerManager.WakeLock mWakeLock;
 
         private static final String[] PROJECTION = {
                 CalendarContract.Instances.BEGIN,
@@ -100,6 +123,10 @@ public class MeetingInfoProvider {
         MeetingLoader(Context context, AtomicReference<ArrayList<Meeting>> lstMeetings) {
             mContext = context;
             mLstMeetings = lstMeetings;
+        }
+
+        public void setChangeListener( ChangeListener changeListener ) {
+            mChangeListener = changeListener;
         }
 
         @Override
@@ -134,6 +161,8 @@ public class MeetingInfoProvider {
                 cursor.close();
                 lstInDayMeetings.addAll( lstAllDayMeetings );
                 mLstMeetings.set( lstInDayMeetings );
+
+                if (mChangeListener != null) mChangeListener.onChange();
             }
 
             wakeLock.release();

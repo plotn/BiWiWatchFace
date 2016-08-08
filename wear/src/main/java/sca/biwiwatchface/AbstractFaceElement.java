@@ -18,6 +18,7 @@ public abstract class AbstractFaceElement {
     private Resources mResources;
     private boolean mInAmbientMode;
     private Rect mTapBounds;
+    private InvalidateListener mInvalidateListener;
 
     public AbstractFaceElement(Context context) {
         mContext = context;
@@ -77,5 +78,15 @@ public abstract class AbstractFaceElement {
     }
 
     public void doTapCommand( int tapType, int x, int y, long eventTime ) {}
+
+    public void setInvalidateListener( InvalidateListener invalidateListener) {
+        mInvalidateListener = invalidateListener;
+    }
+
+    public void postInvalidate() {
+        if (mInvalidateListener != null) {
+            mInvalidateListener.postInvalidate();
+        }
+    }
 
 }

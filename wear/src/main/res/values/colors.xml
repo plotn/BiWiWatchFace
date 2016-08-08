@@ -7,4 +7,5 @@
     <color name="second">#dddddd</color>
     <color name="battery">#999999</color>
     <color name="calendar">#dddddd</color>
+    <color name="weather">#bbbbbb</color>
 </resources>

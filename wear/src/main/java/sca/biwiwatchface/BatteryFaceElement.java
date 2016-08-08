@@ -126,8 +126,6 @@ public class BatteryFaceElement extends AbstractFaceElement {
         }
 
         private class BatteryRunnable implements Runnable {
-            private final String LOG_TAG = BatteryRunnable.class.getSimpleName();
-
             @Override
             public void run() {
                 Intent batteryStatus = mContext.registerReceiver( null, mBatteryIntentFilter );

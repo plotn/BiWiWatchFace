@@ -1,29 +1,24 @@
 package sca.biwiwatchface.data;
 
 public class Weather {
-
-    private static String wideUnicde(int unicodeChar ) {
-        return new String( Character.toChars(unicodeChar) );
-    }
-
     public static String conditionIdToUnicode( int conditionId ) {
         if (conditionId >= 200 && conditionId <= 232) {
             return "\u26a1"; //⛈ return R.drawable.ic_storm;
         } else if (conditionId >= 300 && conditionId <= 321) {
-            return wideUnicde(0x1F326);
+            return WideUnicode.toString(0x1F326);
             //return "\u2602"; //☂ return R.drawable.ic_light_rain;
         } else if (conditionId >= 500 && conditionId <= 504) {
-            return wideUnicde(0x1F327);
+            return WideUnicode.toString(0x1F327);
             //return "\u2614"; //☔ return R.drawable.ic_rain;
         } else if (conditionId == 511) {
             return "\u2745"; //❅ return R.drawable.ic_snow;
         } else if (conditionId >= 520 && conditionId <= 531) {
-            return wideUnicde(0x1F327);
+            return WideUnicode.toString(0x1F327);
             //return "\u2614"; //☔ return R.drawable.ic_rain;
         } else if (conditionId >= 600 && conditionId <= 622) {
             return "\u2745"; //❅ return R.drawable.ic_snow;
         } else if (conditionId >= 701 && conditionId <= 761) {
-            return wideUnicde(0x1F32B);
+            return WideUnicode.toString(0x1F32B);
             //return "\u26c6"; //⛆ return R.drawable.ic_fog;
         } else if (conditionId == 762 || conditionId == 781) {
             return "\u26a1"; //⛈ return R.drawable.ic_storm;

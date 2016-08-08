@@ -16,6 +16,9 @@
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@android:style/Theme.DeviceDefault">
+
+        <uses-library android:name="com.google.android.wearable" android:required="false" />
+
         <service
             android:name=".MainWatchFace"
             android:label="@string/biwi"
@@ -44,6 +47,8 @@
         <activity
             android:name=".activities.WeatherActivity"
             android:label="@string/title_activity_weather">
+        </activity>
+        <activity android:name=".CalendarPermissionActivity">
         </activity>
     </application>
 

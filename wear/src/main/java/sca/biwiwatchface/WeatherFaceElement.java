@@ -36,7 +36,7 @@ public class WeatherFaceElement extends AbstractFaceElement {
 
     public WeatherFaceElement( Context context) {
         super( context );
-        int textColor = getColor(R.color.date);
+        int textColor = getColor(R.color.weather);
         Typeface typefaceMedium = Typeface.create("sans-serif", Typeface.NORMAL);
 
         mWeatherPaint = new Paint();
@@ -76,6 +76,7 @@ public class WeatherFaceElement extends AbstractFaceElement {
         Log.d( TAG, "setDataItem: " + mWeatherJsonString );
 
         cacheDisplayedWeather( System.currentTimeMillis() );
+        postInvalidate();
     }
 
     public void cacheDisplayedWeather( long nowUTCMillis ) {

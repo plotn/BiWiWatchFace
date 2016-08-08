@@ -55,7 +55,7 @@ redir add tcp:5601:5601
  * Digital watch face with seconds. In ambient mode, the seconds aren't displayed. On devices with
  * low-bit ambient mode, the text is drawn without anti-aliasing in ambient mode.
  */
-public class MainWatchFace extends CanvasWatchFaceService {
+public class MainWatchFace extends CanvasWatchFaceService{
     /**
      * Update rate in milliseconds for interactive mode. We update once a second since seconds are
      * displayed in interactive mode.
@@ -92,7 +92,7 @@ public class MainWatchFace extends CanvasWatchFaceService {
         }
     }
 
-    private class Engine extends CanvasWatchFaceService.Engine {
+    private class Engine extends CanvasWatchFaceService.Engine implements InvalidateListener  {
         private final String TAG = Engine.class.getSimpleName();
 
         final Handler mUpdateTimeHandler = new EngineHandler(this);
@@ -153,6 +153,9 @@ public class MainWatchFace extends CanvasWatchFaceService {
                     mCalendarPaint = new MeetingFaceElement( context ),
                     mWeatherPaint = new WeatherFaceElement( context )
             );
+            for (AbstractFaceElement element : mLstFaceElement) {
+                element.setInvalidateListener( this );
+            }
 
             mCalendar = Calendar.getInstance();
 
