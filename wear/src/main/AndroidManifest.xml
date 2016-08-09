@@ -48,7 +48,7 @@
             android:name=".activities.WeatherActivity"
             android:label="@string/title_activity_weather">
         </activity>
-        <activity android:name=".CalendarPermissionActivity">
+        <activity android:name=".activities.CalendarPermissionActivity">
         </activity>
     </application>
 

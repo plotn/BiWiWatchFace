@@ -6,4 +6,5 @@
     <string name="title_activity_weather">Weather forecast</string>
     <string name="hello_square" translatable="false">Hello Square World!</string>
     <string name="format_weather_age_warning">%1$dh ago</string>
+    <string name="weather_web_service">Data by OpenWeatherMap.org</string>
 </resources>

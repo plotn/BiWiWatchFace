@@ -1,4 +1,4 @@
-package sca.biwiwatchface;
+package sca.biwiwatchface.activities;
 
 import android.Manifest;
 import android.os.Bundle;
@@ -8,7 +8,6 @@ import android.support.wearable.activity.WearableActivity;
 public class CalendarPermissionActivity extends WearableActivity {
 
     private static final int PERMISSION_REQUEST_READ_CALENDAR = 1;
-
 
     @Override
     protected void onCreate( Bundle savedInstanceState ) {

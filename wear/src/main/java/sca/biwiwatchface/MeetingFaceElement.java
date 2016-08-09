@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.concurrent.ScheduledExecutorService;
 
+import sca.biwiwatchface.activities.CalendarPermissionActivity;
 import sca.biwiwatchface.data.Meeting;
 import sca.biwiwatchface.data.MeetingInfoProvider;
 import sca.biwiwatchface.data.WideUnicode;
