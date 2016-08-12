@@ -1,7 +1,6 @@
 package sca.biwiwatchface.sync;
 
 import android.accounts.Account;
-import android.accounts.AccountManager;
 import android.app.Service;
 import android.content.ContentResolver;
 import android.content.Context;
@@ -59,52 +58,24 @@ public class SyncService extends Service {
 
     // The authority for the sync adapter's content provider
     public static final String AUTHORITY = "sca.biwiwatchface.provider";
-    // An account type, in the form of a domain name
-    public static final String ACCOUNT_TYPE = "biwiwatchface.sca";
-    // The account name
-    public static final String ACCOUNT = "BiWi";
 
-    /**
-     * Create a new dummy account for the sync adapter
-     *
-     * @param context The application context
-     */
-    private static Account getSyncAccount( Context context ) {
-        // Create the account type and default account
-        Account newAccount = new Account( ACCOUNT, ACCOUNT_TYPE );
-        // Get an instance of the Android account manager
-        AccountManager accountManager = (AccountManager) context.getSystemService( ACCOUNT_SERVICE );
-
-        // If the password doesn't exist, the account doesn't exist
-        if ( null == accountManager.getPassword(newAccount) ) {
-            /*
-             * Add the account and account type, no password or user data
-             * If successful, return the Account object, otherwise report an error.
-             */
-            if ( ! accountManager.addAccountExplicitly( newAccount, "", null ) ) {
-                /*
-                 * The account exists or some other error occurred. Log this, report it,
-                 * or handle it internally.
-                 */
-                return null;
-            }
-        }
-        return newAccount;
-
-    }
 
     public static final long SYNC_INTERVAL_IN_SECONDS = 2*60*60; // Minimun seems to be 60 seconds
 
     public static void startSyncing(Context context) {
         Log.d( TAG, "startSyncing: " );
-        Account account = getSyncAccount( context );
+        Account account = Authenticator.getSyncAccount( context );
+        startSyncing( account );
+    }
+
+    public static void startSyncing(Account account) {
         ContentResolver.setSyncAutomatically(account, AUTHORITY, true);
         ContentResolver.addPeriodicSync( account, AUTHORITY, Bundle.EMPTY, SYNC_INTERVAL_IN_SECONDS );
     }
 
     public static void syncNow( Context context ) {
         Log.d( TAG, "syncNow: " );
-        Account account = getSyncAccount( context );
+        Account account = Authenticator.getSyncAccount( context );
 
         // Pass the settings flags by inserting them in a bundle
         Bundle settingsBundle = new Bundle();
