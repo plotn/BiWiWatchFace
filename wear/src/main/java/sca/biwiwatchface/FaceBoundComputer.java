@@ -28,6 +28,12 @@ public class FaceBoundComputer {
         }
     }
 
+    int getRightSide( int y ) {
+        int xLeft = getLeftSide( y );
+        int leftOffset = xLeft - mBounds.left();
+        return mBounds.right() - leftOffset;
+    }
+
     boolean isYInScreen( int y ) {
         return y < mBounds.bottom()-mChinSize;
     }

@@ -100,12 +100,13 @@ public class MainWatchFace extends CanvasWatchFaceService{
 
         private ProductionRectWrapper mBoundRectWrapper = new ProductionRectWrapper();
         private FaceBoundComputer mBoundComputer = new FaceBoundComputer();
+        private DimensionsComputer mDimensionsComputer = new DimensionsComputer();
 
         private Paint mBackgroundPaint;
         private List<AbstractFaceElement> mLstFaceElement;
         private TimeFaceElement mTimePaint;
         private DateFaceElement mDatePaint;
-        private SecondFaceElement mSecondPaint;
+        private SecondsFaceElement mSecondsPaint;
         private BatteryFaceElement mBatteryPaint;
         private MeetingFaceElement mCalendarPaint;
         private WeatherFaceElement mWeatherPaint;
@@ -147,7 +148,7 @@ public class MainWatchFace extends CanvasWatchFaceService{
             Context context = MainWatchFace.this;
             mLstFaceElement = Arrays.asList(
                     mTimePaint = new TimeFaceElement( context ),
-                    mSecondPaint = new SecondFaceElement( context ),
+                    mSecondsPaint = new SecondsFaceElement( context ),
                     mDatePaint = new DateFaceElement( context ),
                     mBatteryPaint = new BatteryFaceElement( context ),
                     mCalendarPaint = new MeetingFaceElement( context ),
@@ -217,6 +218,7 @@ public class MainWatchFace extends CanvasWatchFaceService{
             super.onApplyWindowInsets(insets);
 
             mBoundComputer.setDimensions( mBoundRectWrapper, insets.isRound(), insets.getSystemWindowInsetBottom() );
+            mDimensionsComputer.setDimensions( mBoundRectWrapper );
 
             for (AbstractFaceElement element : mLstFaceElement) {
                 element.onApplyWindowInsets( insets );
@@ -268,6 +270,7 @@ public class MainWatchFace extends CanvasWatchFaceService{
             }
         }
 
+
         @Override
         public void onDraw(Canvas canvas, Rect bounds) {
             //Log.d( TAG, "onDraw");
@@ -282,17 +285,21 @@ public class MainWatchFace extends CanvasWatchFaceService{
 
             long now = System.currentTimeMillis();
             mCalendar.setTimeInMillis(now);
-            mTimePaint.drawTime( canvas, mCalendar, bounds.centerX(), bounds.centerY() );
+            mTimePaint.drawTime( canvas, mCalendar, bounds.centerX(), mDimensionsComputer.getYTime() );
             if (!mAmbient) {
-                mDatePaint.drawTime(canvas, mCalendar, bounds.centerX(), bounds.centerY() - 80);
-                mSecondPaint.drawTime( canvas, mCalendar, bounds.right - 30, bounds.centerY() + 60 );
-                mBatteryPaint.drawTime( canvas, mCalendar, bounds.left + 30, bounds.centerY() + 60 );
-                mCalendarPaint.drawTime( canvas, mCalendar, mBoundComputer, bounds.centerX(), bounds.centerY() + 100 );
-                mWeatherPaint.drawTime( canvas, mCalendar, bounds.centerX(), bounds.centerY() - 105 );
+                mDatePaint.drawTime(canvas, mCalendar, bounds.centerX(), mDimensionsComputer.getYDate() );
+
+                int ySubTimeLine = mDimensionsComputer.getYBattery();
+                final int yOffsetForRound = 30;
+                int xSeconds = mBoundComputer.getRightSide( ySubTimeLine + yOffsetForRound );
+                mSecondsPaint.drawTime( canvas, mCalendar, xSeconds, ySubTimeLine );
+
+                int xBattery = mBoundComputer.getLeftSide( ySubTimeLine + yOffsetForRound );
+                mBatteryPaint.drawTime( canvas, mCalendar, xBattery, ySubTimeLine );
+
+                mCalendarPaint.drawTime( canvas, mCalendar, mBoundComputer, bounds.centerX(),  mDimensionsComputer.getYMeeting() );
+                mWeatherPaint.drawTime( canvas, mCalendar, bounds.centerX(),  mDimensionsComputer.getYWeather() );
             }
-//            if (mCalendar.get(Calendar.SECOND) % 10 == 0 ) {
-//                mMobileLink.sendDataItemStart("/syncNow");
-//            }
         }
 
         /**
