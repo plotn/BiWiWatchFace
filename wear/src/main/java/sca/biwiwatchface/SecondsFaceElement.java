@@ -9,7 +9,7 @@ import android.view.WindowInsets;
 
 import java.util.Calendar;
 
-public class SecondFaceElement extends AbstractFaceElement {
+public class SecondsFaceElement extends AbstractFaceElement {
 
     private static final String MEASURE_STRING = "00";
 
@@ -17,7 +17,7 @@ public class SecondFaceElement extends AbstractFaceElement {
 
     private float mSecondHalfHeight;
 
-    public SecondFaceElement( Context context) {
+    public SecondsFaceElement( Context context) {
         super(context);
         int textColor = getColor(R.color.second );
         Typeface typefaceMedium = Typeface.create("sans-serif-medium", Typeface.NORMAL);
