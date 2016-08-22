@@ -14,7 +14,9 @@ import org.json.JSONObject;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.List;
 import java.util.Locale;
 
 import sca.biwiwatchface.R;
@@ -28,11 +30,14 @@ public class WeatherAdapter extends BaseAdapter {
     private final static int VIEW_TYPE_FORECAST = 1;
     private final static int VIEW_TYPE_FOOTER = 2;
 
-    JSONArray mForecastArray;
+    List<ForecastSlice> mSlices = new ArrayList<>(  );
     JSONObject mLocationJson;
+    long mFetchMaxUTCMillis = Long.MAX_VALUE;
+
     private static LayoutInflater mInflater = null;
 
-    private DateFormat mDateFormat = new SimpleDateFormat("EEE H", Locale.getDefault());
+    private DateFormat mForecastStartDateFormat = new SimpleDateFormat("EEE H", Locale.getDefault());
+    //private DateFormat mFetchDateFormat = new SimpleDateFormat(  )
     private Context mContext;
 
     WeatherAdapter( Context context, String jsonString ) {
@@ -42,7 +47,18 @@ public class WeatherAdapter extends BaseAdapter {
 
         try {
             JSONObject json = new JSONObject( jsonString );
-            mForecastArray = json.getJSONArray( "weather" );
+
+            JSONArray forecastArray = json.getJSONArray( "weather" );
+            long nowUTCMillis = System.currentTimeMillis();
+            for ( int i = 0; i < forecastArray.length(); i++ ) {
+                JSONObject forecast = forecastArray.getJSONObject( i );
+                ForecastSlice slice = ForecastSlice.ofJSONObject( forecast );
+                if (nowUTCMillis < slice.getUTCMillisEnd()) {
+                    mSlices.add( slice );
+                    mFetchMaxUTCMillis = Math.min( mFetchMaxUTCMillis, slice.getFetchTimestampUTCMillis() );
+                }
+            }
+
             mLocationJson = json.getJSONObject( "location" );
 
         } catch ( JSONException e ) {
@@ -52,20 +68,15 @@ public class WeatherAdapter extends BaseAdapter {
 
     @Override
     public int getCount() {
-        return mForecastArray.length() +2;
+        return mSlices.size() +2;
     }
 
     @Override
     public Object getItem( int position ) {
-        try {
-            if (position == 0) {
-                return mLocationJson;
-            }
-            return mForecastArray.get( position-1 );
-        } catch ( JSONException e ) {
-            Log.e( TAG, "WeatherAdapter: ", e );
+        if (position == 0 || position == getCount()-1) {
+            return mLocationJson;
         }
-        return null;
+        return mSlices.get( position-1 );
     }
 
     @Override
@@ -105,15 +116,16 @@ public class WeatherAdapter extends BaseAdapter {
                 TextView textMinTemp = (TextView) vi.findViewById( R.id.list_item_forecast_min_temperature );
                 TextView textDate = (TextView) vi.findViewById( R.id.list_item_forecast_date );
 
-                JSONObject forecast = mForecastArray.getJSONObject( position - 1 );
-                ForecastSlice slice = ForecastSlice.ofJSONObject( forecast );
+                ForecastSlice slice = mSlices.get( position - 1 );
                 textCondition.setText( Weather.conditionIdToUnicode( slice.getConditionId() ) );
                 textMaxTemp.setText( Math.round( slice.getMaxTemp() ) + "°" );
                 textMinTemp.setText( Math.round( slice.getMinTemp() ) + "°" );
 
+                textMaxTemp.setTextAppearance( android.R.style.TextAppearance_Small );
+
                 Calendar calendar = Calendar.getInstance();
                 calendar.setTimeInMillis( slice.getUTCMillisStart() );
-                String szStartDate = mDateFormat.format( calendar.getTime() );
+                String szStartDate = mForecastStartDateFormat.format( calendar.getTime() );
 
                 long now = System.currentTimeMillis();
                 String ageWarning = "";
@@ -127,6 +139,13 @@ public class WeatherAdapter extends BaseAdapter {
                 String string2 = String.format( "%sh - %sh%s", szStartDate, slice.getLocalHourEnd(), ageWarning );
                 textDate.setText( string2 );
 
+                View divider = vi.findViewById( R.id.list_item_custom_divider );
+                int idDividerColor = android.R.color.transparent;
+                if ( slice.getLocalHourEnd() < 9 ) {
+                    idDividerColor = R.color.grey;
+                }
+                divider.setBackgroundColor( mContext.getColor( idDividerColor ) );
+
             } else if (type == VIEW_TYPE_HEADER) {
                 if (convertView == null) vi = mInflater.inflate( R.layout.list_item_header, null);
 
@@ -137,10 +156,19 @@ public class WeatherAdapter extends BaseAdapter {
             } else {
                 if (convertView == null) vi = mInflater.inflate( R.layout.list_item_footer, null);
 
-                TextView textCoordinates = (TextView) vi.findViewById( R.id.list_header_coordinates );
+                TextView textCoordinates = (TextView) vi.findViewById( R.id.list_footer_coordinates );
 
                 textCoordinates.setText( String.format( "Lat: %s Lon: %s",
                         mLocationJson.getDouble( "askedLat" ), mLocationJson.getDouble( "askedLon" ) ) );
+
+                if (mFetchMaxUTCMillis != Long.MAX_VALUE) {
+                    TextView textFetchDate = (TextView) vi.findViewById( R.id.list_footer_fecth_date );
+
+                    Calendar calendar = Calendar.getInstance();
+                    calendar.setTimeInMillis( mFetchMaxUTCMillis );
+                    String szFecthDate = DateFormat.getDateTimeInstance().format(  calendar.getTime() );
+                    textFetchDate.setText( szFecthDate );
+                }
 
             }
         } catch ( JSONException e ) {

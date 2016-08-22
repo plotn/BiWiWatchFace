@@ -47,4 +47,10 @@
         tools:text="lun. 20h - 8h"
         android:id="@+id/list_item_forecast_date"
         android:layout_gravity="right"/>
+
+    <View
+        android:id="@+id/list_item_custom_divider"
+        android:layout_width="fill_parent"
+        android:layout_height="1dp"
+        />
 </LinearLayout>

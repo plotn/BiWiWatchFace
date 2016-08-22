@@ -13,14 +13,16 @@ public class ForecastSlice {
     private static final String FIELD_MAX_TEMP = "maxTemp";
     private static final String FIELD_FETCH_TS = "fetchTs";
 
-    private int mLocalHourEnd;
     private long mUTCMillisStart;
-    private long mNextSliceUTCSeconds;
-    private boolean mHasValue;
+    private int mLocalHourEnd;
     private int mConditionId;
     private float mMinTemp;
     private float mMaxTemp;
     private long mFetchTimestampUTCMillis;
+
+    private long mNextSliceUTCSeconds;
+    private boolean mHasValue;
+
 
     public static ForecastSlice buildCurrentSlice() {
         return buildSlice( System.currentTimeMillis() );
@@ -67,6 +69,10 @@ public class ForecastSlice {
         return mUTCMillisStart;
     }
 
+    public long getUTCMillisEnd() {
+        return mNextSliceUTCSeconds*1000-1;
+    }
+
     public int getLocalHourEnd() {
         return mLocalHourEnd;
     }
@@ -85,8 +91,8 @@ public class ForecastSlice {
     }
 
     public static ForecastSlice ofJSONObject( JSONObject json ) throws JSONException {
-        ForecastSlice slice = new ForecastSlice();
-        slice.mUTCMillisStart = json.getLong( FIELD_START_UTC_MILLIS );
+        long utcMillisStart = json.getLong( FIELD_START_UTC_MILLIS );
+        ForecastSlice slice = buildSlice( utcMillisStart );
         slice.mLocalHourEnd = json.getInt( FIELD_END_LOCAL_HOUR );
         slice.mConditionId = json.getInt( FIELD_CONDITION_ID );
         slice.mMinTemp = (float) json.getDouble( FIELD_MIN_TEMP );
