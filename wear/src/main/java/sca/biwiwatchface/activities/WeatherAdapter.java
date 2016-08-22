@@ -121,8 +121,6 @@ public class WeatherAdapter extends BaseAdapter {
                 textMaxTemp.setText( Math.round( slice.getMaxTemp() ) + "°" );
                 textMinTemp.setText( Math.round( slice.getMinTemp() ) + "°" );
 
-                textMaxTemp.setTextAppearance( android.R.style.TextAppearance_Small );
-
                 Calendar calendar = Calendar.getInstance();
                 calendar.setTimeInMillis( slice.getUTCMillisStart() );
                 String szStartDate = mForecastStartDateFormat.format( calendar.getTime() );
