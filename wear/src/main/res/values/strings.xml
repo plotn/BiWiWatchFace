@@ -1,6 +1,6 @@
 <resources>
-    <string name="app_name" translatable="false">BiWi Watch Face</string>
-    <string name="biwi" translatable="false">BiWi</string>
+    <string name="app_name" translatable="false">Be:Wi Watch Face</string>
+    <string name="bewi" translatable="false">Be:Wi</string>
     <string name="today">Tod</string>
     <string name="tomorrow">Tom</string>
     <string name="title_activity_weather">Weather forecast</string>

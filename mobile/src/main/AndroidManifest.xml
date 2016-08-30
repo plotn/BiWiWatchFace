@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-          package="com.sebcano.biwiwatchface">
+          package="com.sebcano.bewiwatchface">
 
     <uses-permission android:name="android.permission.WAKE_LOCK"/>
     <uses-permission android:name="android.permission.READ_CALENDAR"/>
@@ -34,7 +34,7 @@
         </service>
 
         <provider
-            android:authorities="com.sebcano.biwiwatchface.provider"
+            android:authorities="com.sebcano.bewiwatchface.provider"
             android:name=".data.WeatherProvider"
             android:label="@string/providerName"
             android:exported="false"

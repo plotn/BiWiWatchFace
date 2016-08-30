@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-          package="com.sebcano.biwiwatchface">
+          package="com.sebcano.bewiwatchface">
 
     <uses-feature android:name="android.hardware.type.watch"/>
 
@@ -21,17 +21,17 @@
 
         <service
             android:name=".MainWatchFace"
-            android:label="@string/biwi"
+            android:label="@string/bewi"
             android:permission="android.permission.BIND_WALLPAPER">
             <meta-data
                 android:name="android.service.wallpaper"
                 android:resource="@xml/watch_face"/>
             <meta-data
                 android:name="com.google.android.wearable.watchface.preview"
-                android:resource="@drawable/preview_biwi"/>
+                android:resource="@drawable/preview_bewi"/>
             <meta-data
                 android:name="com.google.android.wearable.watchface.preview_circular"
-                android:resource="@drawable/preview_biwi_circular"/>
+                android:resource="@drawable/preview_bewi_circular"/>
 
             <intent-filter>
                 <action android:name="android.service.wallpaper.WallpaperService"/>
