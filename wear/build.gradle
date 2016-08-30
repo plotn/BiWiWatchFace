@@ -6,7 +6,7 @@ android {
     buildToolsVersion "23.0.3"
 
     defaultConfig {
-        applicationId "sca.biwiwatchface"
+        applicationId "com.sebcano.biwiwatchface"
         minSdkVersion 23
         targetSdkVersion 23
         versionCode 1
