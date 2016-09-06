@@ -28,6 +28,7 @@ public class WeatherActivity extends Activity {
                 String json = intent.getStringExtra( INTENT_EXTRA_WEATHER_JSON );
 
                 mListView = (ListView) stub.findViewById( R.id.weatherList );
+                mListView.setEmptyView( stub.findViewById( R.id.weatherList_empty ) );
                 mListView.setAdapter( new WeatherAdapter( WeatherActivity.this, json ) );
             }
         } );

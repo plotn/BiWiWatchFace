@@ -30,6 +30,7 @@ public class WeatherAdapter extends BaseAdapter {
     private final static int VIEW_TYPE_FORECAST = 1;
     private final static int VIEW_TYPE_FOOTER = 2;
 
+    private boolean mEmpty = true;
     List<ForecastSlice> mSlices = new ArrayList<>(  );
     JSONObject mLocationJson;
     long mFetchMaxUTCMillis = Long.MAX_VALUE;
@@ -37,7 +38,6 @@ public class WeatherAdapter extends BaseAdapter {
     private static LayoutInflater mInflater = null;
 
     private DateFormat mForecastStartDateFormat = new SimpleDateFormat("EEE H", Locale.getDefault());
-    //private DateFormat mFetchDateFormat = new SimpleDateFormat(  )
     private Context mContext;
 
     WeatherAdapter( Context context, String jsonString ) {
@@ -45,30 +45,33 @@ public class WeatherAdapter extends BaseAdapter {
 
         mInflater = (LayoutInflater) context.getSystemService( Context.LAYOUT_INFLATER_SERVICE);
 
-        try {
-            JSONObject json = new JSONObject( jsonString );
+        if ( jsonString != null ) {
+            try {
+                JSONObject json = new JSONObject( jsonString );
 
-            JSONArray forecastArray = json.getJSONArray( "weather" );
-            long nowUTCMillis = System.currentTimeMillis();
-            for ( int i = 0; i < forecastArray.length(); i++ ) {
-                JSONObject forecast = forecastArray.getJSONObject( i );
-                ForecastSlice slice = ForecastSlice.ofJSONObject( forecast );
-                if (nowUTCMillis < slice.getUTCMillisEnd()) {
-                    mSlices.add( slice );
-                    mFetchMaxUTCMillis = Math.min( mFetchMaxUTCMillis, slice.getFetchTimestampUTCMillis() );
+                JSONArray forecastArray = json.getJSONArray( "weather" );
+                long nowUTCMillis = System.currentTimeMillis();
+                for ( int i = 0; i < forecastArray.length(); i++ ) {
+                    JSONObject forecast = forecastArray.getJSONObject( i );
+                    ForecastSlice slice = ForecastSlice.ofJSONObject( forecast );
+                    if ( nowUTCMillis < slice.getUTCMillisEnd() ) {
+                        mSlices.add( slice );
+                        mFetchMaxUTCMillis = Math.min( mFetchMaxUTCMillis, slice.getFetchTimestampUTCMillis() );
+                    }
                 }
+
+                mLocationJson = json.getJSONObject( "location" );
+                mEmpty = false;
+
+            } catch ( JSONException e ) {
+                Log.e( TAG, "WeatherAdapter: ", e );
             }
-
-            mLocationJson = json.getJSONObject( "location" );
-
-        } catch ( JSONException e ) {
-            Log.e( TAG, "WeatherAdapter: ", e );
         }
     }
 
     @Override
     public int getCount() {
-        return mSlices.size() +2;
+        return mEmpty ? 0 : mSlices.size() +2;
     }
 
     @Override

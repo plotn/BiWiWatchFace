@@ -58,10 +58,12 @@ public class ForecastSlice {
     }
 
     public float getMinTemp() {
+
         return mMinTemp;
     }
 
     public float getMaxTemp() {
+
         return mMaxTemp;
     }
 

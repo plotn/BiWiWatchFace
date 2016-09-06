@@ -17,6 +17,12 @@
             android:layout_height="match_parent"
             android:id="@+id/weatherList"
             />
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:id="@+id/weatherList_empty"
+            android:text="@string/no_weather_data"
+            android:gravity="center"/>
 
     </FrameLayout>
 
