@@ -7,8 +7,6 @@ import android.graphics.Rect;
 import android.graphics.Typeface;
 import android.support.wearable.watchface.WatchFaceService;
 import android.text.TextPaint;
-import android.util.Log;
-import android.view.WindowInsets;
 
 import com.sebcano.bewiwatchface.activities.CalendarPermissionActivity;
 import com.sebcano.bewiwatchface.data.Meeting;
@@ -65,8 +63,7 @@ public class MeetingFaceElement extends AbstractFaceElement {
     }
 
     @Override
-    public void onApplyWindowInsets( WindowInsets insets ) {
-        float textSize = getDimension( R.dimen.digital_calendar_size );
+    public void setTextSize(float textSize) {
         mTitlePaint.setTextSize(textSize);
         mDatePaint.setTextSize(textSize);
 
@@ -92,7 +89,6 @@ public class MeetingFaceElement extends AbstractFaceElement {
         while (iCut>0) {
             String cropTitle = str.substring( 0, iCut ) + CROP_CHAR;
             mTitlePaint.getTextBounds( cropTitle, 0, cropTitle.length(), rcBounds );
-            Log.d( TAG, "cropTitle: " + rcBounds.width() + " " + maxWidth );
             if( rcBounds.width() <= maxWidth ) {
                 return cropTitle;
             }
@@ -117,6 +113,7 @@ public class MeetingFaceElement extends AbstractFaceElement {
                         int dateWidth = getTextWidth( mDatePaint, begin+"x" );
                         int yBoundCompute = currentY + (int)(mLineHeight /2);
                         int xBoundLeft = boundComputer.getLeftSide( yBoundCompute );
+                        if (xBoundLeft >= boundComputer.getCenterX() ) break;
                         int xTitle = xBoundLeft+dateWidth;
                         int titleMaxWidth = boundComputer.getRightSide( yBoundCompute ) - xTitle;
                         String croppedTitle = cropTitle( meeting.getTitle(), titleMaxWidth );
@@ -131,6 +128,12 @@ public class MeetingFaceElement extends AbstractFaceElement {
                         positionedMeeting.draw( canvas, mDatePaint, mTitlePaint );
                     }
                 }
+
+            /*{
+                DisplayMetrics displayMetrics = getContext().getResources().getDisplayMetrics();
+                int xBoundLeft = boundComputer.getLeftSide( y + (int)(mLineHeight /2) );
+                canvas.drawText( Float.toString( displayMetrics.density ), xBoundLeft, y, mTitlePaint );
+            }*/
 
                 break;
 

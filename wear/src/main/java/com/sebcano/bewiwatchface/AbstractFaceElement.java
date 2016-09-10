@@ -59,7 +59,9 @@ public abstract class AbstractFaceElement {
 
     public abstract void setAntiAlias(boolean enabled);
 
-    public abstract void onApplyWindowInsets(WindowInsets insets);
+    public void onApplyWindowInsets(WindowInsets insets) {};
+
+    public void setTextSize(float textSize) {}
 
     public void drawTime( Canvas canvas, Calendar calendar, int x, int y) {}
 

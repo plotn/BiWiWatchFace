@@ -7,21 +7,19 @@ import android.graphics.Paint;
 import android.graphics.Typeface;
 import android.support.wearable.watchface.WatchFaceService;
 import android.util.Log;
-import android.view.WindowInsets;
 
 import com.google.android.gms.wearable.DataItem;
 import com.google.android.gms.wearable.DataMap;
 import com.google.android.gms.wearable.DataMapItem;
+import com.sebcano.bewiwatchface.activities.WeatherActivity;
+import com.sebcano.bewiwatchface.common.model.ForecastSlice;
+import com.sebcano.bewiwatchface.data.Weather;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.Calendar;
-
-import com.sebcano.bewiwatchface.activities.WeatherActivity;
-import com.sebcano.bewiwatchface.data.Weather;
-import com.sebcano.bewiwatchface.common.model.ForecastSlice;
 
 public class WeatherFaceElement extends AbstractFaceElement {
 
@@ -53,8 +51,7 @@ public class WeatherFaceElement extends AbstractFaceElement {
     }
 
     @Override
-    public void onApplyWindowInsets( WindowInsets insets ) {
-        float textSize = getDimension( R.dimen.digital_calendar_size );
+    public void setTextSize( float textSize ) {
         mWeatherPaint.setTextSize(textSize);
     }
 

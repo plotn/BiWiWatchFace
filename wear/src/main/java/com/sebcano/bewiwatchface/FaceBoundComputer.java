@@ -34,6 +34,10 @@ public class FaceBoundComputer {
         return mBounds.right() - leftOffset;
     }
 
+    int getCenterX() {
+        return mBounds.centerX();
+    }
+
     boolean isYInScreen( int y ) {
         return y < mBounds.bottom()-mChinSize;
     }

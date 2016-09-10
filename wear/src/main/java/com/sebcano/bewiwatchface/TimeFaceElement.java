@@ -5,7 +5,6 @@ import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.Typeface;
-import android.view.WindowInsets;
 
 import java.util.Calendar;
 import java.util.Locale;
@@ -47,8 +46,7 @@ public class TimeFaceElement extends AbstractFaceElement {
     }
 
     @Override
-    public void onApplyWindowInsets(WindowInsets insets) {
-        float textSize = getDimension(R.dimen.digital_time_size);
+    public void setTextSize(float textSize) {
         mHourPaint.setTextSize(textSize);
         mMinutePaint.setTextSize(textSize);
         mColonPaint.setTextSize(textSize);

@@ -12,7 +12,6 @@ import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.Typeface;
 import android.os.BatteryManager;
-import android.view.WindowInsets;
 
 import java.util.Calendar;
 import java.util.Locale;
@@ -71,9 +70,8 @@ public class BatteryFaceElement extends AbstractFaceElement {
         mBitmapPaint.setAntiAlias(enabled);
     }
 
-    public void onApplyWindowInsets(WindowInsets insets) {
-        boolean isRound = insets.isRound();
-        float textSize = getDimension( R.dimen.digital_battery_size );
+    @Override
+    public void setTextSize(float textSize) {
         mBatteryPaint.setTextSize(textSize);
 
         Rect rcTextBounds = new Rect();

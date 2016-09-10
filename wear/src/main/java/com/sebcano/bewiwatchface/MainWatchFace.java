@@ -173,7 +173,7 @@ public class MainWatchFace extends CanvasWatchFaceService{
 
         @Override
         public void onVisibilityChanged(boolean visible) {
-            Log.d( TAG, "onVisibilityChanged " + visible );
+            //Log.d( TAG, "onVisibilityChanged " + visible );
             super.onVisibilityChanged(visible);
 
             if (visible) {
@@ -239,7 +239,7 @@ public class MainWatchFace extends CanvasWatchFaceService{
 
         @Override
         public void onAmbientModeChanged(boolean inAmbientMode) {
-            Log.d( TAG, "onAmbientModeChanged " + inAmbientMode);
+            //Log.d( TAG, "onAmbientModeChanged " + inAmbientMode);
             super.onAmbientModeChanged(inAmbientMode);
             if (mAmbient != inAmbientMode) {
                 mAmbient = inAmbientMode;
@@ -269,11 +269,23 @@ public class MainWatchFace extends CanvasWatchFaceService{
             }
         }
 
+        private int mLastHeight = 0;
 
         @Override
         public void onDraw(Canvas canvas, Rect bounds) {
             //Log.d( TAG, "onDraw");
             mBoundRectWrapper.setRect( bounds );
+
+            if (bounds.height() != mLastHeight) {
+                mWeatherPaint.setTextSize( mDimensionsComputer.getWeatherHeight() );
+                mDatePaint.setTextSize( mDimensionsComputer.getDateHeight() );
+                mTimePaint.setTextSize( mDimensionsComputer.getTimeHeight() );
+                mBatteryPaint.setTextSize( mDimensionsComputer.getBatteryHeight() );
+                mSecondsPaint.setTextSize( mDimensionsComputer.getSecondsHeight() );
+                mCalendarPaint.setTextSize( mDimensionsComputer.getCalendarHeight() );
+                mLastHeight = bounds.height();
+                Log.d( TAG, "onDraw: changeTextSize " + mLastHeight );
+            }
 
             // Draw the background.
             if (isInAmbientMode()) {

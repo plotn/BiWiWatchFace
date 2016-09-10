@@ -5,7 +5,6 @@ import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.Typeface;
-import android.view.WindowInsets;
 
 import java.util.Calendar;
 
@@ -36,8 +35,7 @@ public class SecondsFaceElement extends AbstractFaceElement {
     }
 
     @Override
-    public void onApplyWindowInsets(WindowInsets insets) {
-        float textSize = getDimension( R.dimen.digital_second_size );
+    public void setTextSize(float textSize) {
         mSecondPaint.setTextSize(textSize);
 
         Rect rcBounds = new Rect();

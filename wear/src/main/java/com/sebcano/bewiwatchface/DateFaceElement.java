@@ -5,7 +5,6 @@ import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.Typeface;
-import android.view.WindowInsets;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -38,8 +37,8 @@ public class DateFaceElement extends AbstractFaceElement {
         mDatePaint.setAntiAlias(enabled);
     }
 
-    public void onApplyWindowInsets(WindowInsets insets) {
-        float textSize = getDimension( R.dimen.digital_date_size );
+    @Override
+    public void setTextSize(float textSize) {
         mDatePaint.setTextSize(textSize);
 
         Rect rcBounds = new Rect();
