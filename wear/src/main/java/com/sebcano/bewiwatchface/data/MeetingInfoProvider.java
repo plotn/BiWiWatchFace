@@ -16,16 +16,18 @@ import android.support.wearable.provider.WearableCalendarContract;
 import android.text.format.DateUtils;
 import android.util.Log;
 
+import com.sebcano.bewiwatchface.R;
+
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.Locale;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-
-import com.sebcano.bewiwatchface.R;
 
 public class MeetingInfoProvider {
     private static final String LOG_TAG = MeetingInfoProvider.class.getSimpleName();
@@ -152,13 +154,19 @@ public class MeetingInfoProvider {
                     long instanceBegin = cursor.getLong( COL_INSTANCE_BEGIN );
                     if ( isAllDay ) {
                         int idPrefixString = instanceBegin > now ? R.string.tomorrow : R.string.today;
-                        lstAllDayMeetings.add( new Meeting( mContext.getString( idPrefixString ), instanceTitle ) );
+                        lstAllDayMeetings.add( new Meeting( instanceBegin, mContext.getString( idPrefixString ), instanceTitle ) );
                     } else {
                         Date startDate = new Date( instanceBegin );
-                        lstInDayMeetings.add( new Meeting( mTimeFormat.format( startDate ), instanceTitle ));
+                        lstInDayMeetings.add( new Meeting( instanceBegin, mTimeFormat.format( startDate ), instanceTitle ));
                     }
                 }
                 cursor.close();
+                Collections.sort( lstInDayMeetings, new Comparator<Meeting>() {
+                    @Override
+                    public int compare( Meeting lhs, Meeting rhs ) {
+                        return (int) ( lhs.getBeginDate() - rhs.getBeginDate() );
+                    }
+                });
                 lstInDayMeetings.addAll( lstAllDayMeetings );
                 mLstMeetings.set( lstInDayMeetings );
 

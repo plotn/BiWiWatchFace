@@ -7,19 +7,22 @@ import android.graphics.Rect;
 import android.graphics.Typeface;
 import android.support.wearable.watchface.WatchFaceService;
 import android.text.TextPaint;
+import android.util.Log;
 import android.view.WindowInsets;
-
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.concurrent.ScheduledExecutorService;
 
 import com.sebcano.bewiwatchface.activities.CalendarPermissionActivity;
 import com.sebcano.bewiwatchface.data.Meeting;
 import com.sebcano.bewiwatchface.data.MeetingInfoProvider;
 import com.sebcano.bewiwatchface.data.WideUnicode;
 
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.concurrent.ScheduledExecutorService;
+
 public class MeetingFaceElement extends AbstractFaceElement {
 
+    private static final String TAG = "MeetingFaceElement";
+    
     private static final String DATE_MEASURE_STRING = "Lj";
 
     final TextPaint mTitlePaint;
@@ -78,6 +81,27 @@ public class MeetingFaceElement extends AbstractFaceElement {
         return rcBounds.width();
     }
 
+    private String cropTitle( String str, int maxWidth ) {
+        Rect rcBounds = new Rect();
+        mTitlePaint.getTextBounds( str, 0, str.length(), rcBounds );
+        if( rcBounds.width() <= maxWidth ) {
+            return str;
+        }
+        final char CROP_CHAR = '\u2026';
+        int iCut = str.length()-1;
+        while (iCut>0) {
+            String cropTitle = str.substring( 0, iCut ) + CROP_CHAR;
+            mTitlePaint.getTextBounds( cropTitle, 0, cropTitle.length(), rcBounds );
+            Log.d( TAG, "cropTitle: " + rcBounds.width() + " " + maxWidth );
+            if( rcBounds.width() <= maxWidth ) {
+                return cropTitle;
+            }
+            iCut--;
+        }
+        return "\u2026";
+
+    }
+
     @Override
     public void drawTime( Canvas canvas, Calendar calendar, FaceBoundComputer boundComputer, int x, int y ) {
         switch (mMeetingInfoProvider.getCalendarPermission()) {
@@ -89,10 +113,14 @@ public class MeetingFaceElement extends AbstractFaceElement {
                     mlstPositionedMeetings.clear();
                     int currentY = y;
                     for (Meeting meeting : currentValue) {
-                        String begin = meeting.getBeginDate();
+                        String begin = meeting.getBeginDateString();
                         int dateWidth = getTextWidth( mDatePaint, begin+"x" );
-                        int xBoundLeft = boundComputer.getLeftSide( currentY + (int)(mLineHeight /2) );
-                        mlstPositionedMeetings.add( new PositionedMeeting( meeting, xBoundLeft, xBoundLeft+dateWidth, currentY ) );
+                        int yBoundCompute = currentY + (int)(mLineHeight /2);
+                        int xBoundLeft = boundComputer.getLeftSide( yBoundCompute );
+                        int xTitle = xBoundLeft+dateWidth;
+                        int titleMaxWidth = boundComputer.getRightSide( yBoundCompute ) - xTitle;
+                        String croppedTitle = cropTitle( meeting.getTitle(), titleMaxWidth );
+                        mlstPositionedMeetings.add( new PositionedMeeting( croppedTitle,  meeting.getBeginDateString(), xBoundLeft, xTitle, currentY ) );
                         currentY += mLineHeight;
                         if (! boundComputer.isYInScreen( currentY ) ) break;
                     }
@@ -100,8 +128,7 @@ public class MeetingFaceElement extends AbstractFaceElement {
 
                 if ( mlstPositionedMeetings != null ) {
                     for ( PositionedMeeting positionedMeeting : mlstPositionedMeetings ) {
-                        canvas.drawText( positionedMeeting.mMeting.getBeginDate(), positionedMeeting.mXDate, positionedMeeting.mY, mDatePaint );
-                        canvas.drawText( positionedMeeting.mMeting.getTitle(), positionedMeeting.mXTitle, positionedMeeting.mY, mTitlePaint );
+                        positionedMeeting.draw( canvas, mDatePaint, mTitlePaint );
                     }
                 }
 
@@ -147,16 +174,23 @@ public class MeetingFaceElement extends AbstractFaceElement {
     }
 
     private static class PositionedMeeting {
-        private Meeting mMeting;
+        private String mBeginDate;
+        private String mTitle;
         private int mXDate;
         private int mXTitle;
         private int mY;
 
-        PositionedMeeting( Meeting meeting, int xDate, int xTitle, int y) {
-            mMeting = meeting;
+        public PositionedMeeting( String title, String beginDate, int xDate, int xTitle, int y) {
+            mBeginDate = beginDate;
+            mTitle = title;
             mXDate = xDate;
             mXTitle = xTitle;
             mY = y;
+        }
+
+        public void draw( Canvas canvas, TextPaint datePaint, TextPaint titlePaint ) {
+            canvas.drawText( mBeginDate, mXDate, mY, datePaint );
+            canvas.drawText( mTitle, mXTitle, mY, titlePaint );
         }
     }
 
