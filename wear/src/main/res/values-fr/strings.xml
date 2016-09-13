@@ -6,4 +6,6 @@
     <string name="title_activity_weather">Prévisions météo</string>
     <string name="weather_web_service">Données par OpenWeatherMap.org</string>
     <string name="no_weather_data">Météo non disponible. Veuillez vérifier votre connection internet ainsi que vos paramètres de localisation et de synchronisation de compte.</string>
+    <string name="options">Options</string>
+    <string name="temperature_unit">Température</string>
 </resources>
