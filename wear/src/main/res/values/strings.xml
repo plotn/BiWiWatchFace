@@ -8,4 +8,22 @@
     <string name="weather_web_service">Data by OpenWeatherMap.org</string>
     <string name="no_weather_data">No weather data available. Please check your internet connection,
         location and account synchronization settings.</string>
+
+    <string name="options">Options</string>
+
+    <string name="temperature_unit">Temperature</string>
+    <string name="temperature_celsius" translatable="false">°C</string>
+    <string name="temperature_fahrenheit" translatable="false">°F</string>
+    <string name="temperature_key" translatable="false">temperature</string>
+    <string name="temperature_celsius_value" translatable="false">C</string>
+    <string name="temperature_fahrenheit_value" translatable="false">F</string>
+    <string-array name="temperature_array">
+        <item>@string/temperature_celsius</item>
+        <item>@string/temperature_fahrenheit</item>
+    </string-array>
+    <string-array name="temperature_values_array">
+        <item>@string/temperature_celsius_value</item>
+        <item>@string/temperature_fahrenheit_value</item>
+    </string-array>
+
 </resources>

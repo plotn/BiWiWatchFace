@@ -57,14 +57,21 @@ public class ForecastSlice {
         return mConditionId;
     }
 
-    public float getMinTemp() {
-
-        return mMinTemp;
+    private float convertTemp( float temperatureCelsius, TemperatureUnit unit) {
+        if (unit == TemperatureUnit.FAHRENHEIT) {
+            return temperatureCelsius * 1.8f + 32;
+        }
+        return temperatureCelsius;
     }
 
-    public float getMaxTemp() {
+    public float getMinTemp(TemperatureUnit unit) {
 
-        return mMaxTemp;
+        return convertTemp( mMinTemp, unit );
+    }
+
+    public float getMaxTemp(TemperatureUnit unit) {
+
+        return convertTemp( mMaxTemp, unit );
     }
 
     public long getUTCMillisStart() {

@@ -9,7 +9,10 @@ import android.widget.BaseAdapter;
 import android.widget.TextView;
 
 import com.sebcano.bewiwatchface.R;
+import com.sebcano.bewiwatchface.Settings;
+import com.sebcano.bewiwatchface.apiwrap.OptionsStorage;
 import com.sebcano.bewiwatchface.common.model.ForecastSlice;
+import com.sebcano.bewiwatchface.common.model.TemperatureUnit;
 import com.sebcano.bewiwatchface.data.Weather;
 
 import org.json.JSONArray;
@@ -39,9 +42,13 @@ public class WeatherAdapter extends BaseAdapter {
 
     private DateFormat mForecastStartDateFormat = new SimpleDateFormat("EEE H", Locale.getDefault());
     private Context mContext;
+    private TemperatureUnit mTemperatureUnit;
 
     WeatherAdapter( Context context, String jsonString ) {
         mContext = context;
+
+        Settings settings = new Settings( new OptionsStorage( mContext ));
+        mTemperatureUnit = settings.getTemperatureUnit();
 
         mInflater = (LayoutInflater) context.getSystemService( Context.LAYOUT_INFLATER_SERVICE);
 
@@ -121,8 +128,8 @@ public class WeatherAdapter extends BaseAdapter {
 
                 ForecastSlice slice = mSlices.get( position - 1 );
                 textCondition.setText( Weather.conditionIdToUnicode( slice.getConditionId() ) );
-                textMaxTemp.setText( Math.round( slice.getMaxTemp() ) + "°" );
-                textMinTemp.setText( Math.round( slice.getMinTemp() ) + "°" );
+                textMaxTemp.setText( Math.round( slice.getMaxTemp(mTemperatureUnit) ) + "°" );
+                textMinTemp.setText( Math.round( slice.getMinTemp(mTemperatureUnit) ) + "°" );
 
                 Calendar calendar = Calendar.getInstance();
                 calendar.setTimeInMillis( slice.getUTCMillisStart() );

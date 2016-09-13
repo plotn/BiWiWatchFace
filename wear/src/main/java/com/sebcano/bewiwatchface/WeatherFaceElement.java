@@ -12,7 +12,9 @@ import com.google.android.gms.wearable.DataItem;
 import com.google.android.gms.wearable.DataMap;
 import com.google.android.gms.wearable.DataMapItem;
 import com.sebcano.bewiwatchface.activities.WeatherActivity;
+import com.sebcano.bewiwatchface.apiwrap.OptionsStorage;
 import com.sebcano.bewiwatchface.common.model.ForecastSlice;
+import com.sebcano.bewiwatchface.common.model.TemperatureUnit;
 import com.sebcano.bewiwatchface.data.Weather;
 
 import org.json.JSONArray;
@@ -25,6 +27,8 @@ public class WeatherFaceElement extends AbstractFaceElement {
 
     private static final String TAG = WeatherFaceElement.class.getSimpleName();
 
+    private Settings mSettings;
+
     private Paint mWeatherPaint;
 
     private String mWeatherJsonString = null;
@@ -34,6 +38,8 @@ public class WeatherFaceElement extends AbstractFaceElement {
 
     public WeatherFaceElement( Context context) {
         super( context );
+        mSettings = new Settings( new OptionsStorage( getContext() ) );
+
         int textColor = getColor(R.color.weather);
         Typeface typefaceMedium = Typeface.create("sans-serif", Typeface.NORMAL);
 
@@ -98,10 +104,14 @@ public class WeatherFaceElement extends AbstractFaceElement {
                         }
                     }
 
+                    TemperatureUnit unit = mSettings.getTemperatureUnit();
+                    float maxTemp = nowSlice.getMaxTemp(unit);
+                    float minTemp = nowSlice.getMinTemp(unit);
+
                     mDisplayedString = String.format( "%s %s° | %s°",
                             Weather.conditionIdToUnicode( nowSlice.getConditionId() ),
-                            Math.round(nowSlice.getMaxTemp()),
-                            Math.round(nowSlice.getMinTemp()) );
+                            Math.round(maxTemp),
+                            Math.round(minTemp) );
                 }
             } catch ( JSONException e ) {
                 Log.e( TAG, "setDataItem: ", e );
