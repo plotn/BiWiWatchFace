@@ -129,12 +129,6 @@ public class MeetingFaceElement extends AbstractFaceElement {
                     }
                 }
 
-            /*{
-                DisplayMetrics displayMetrics = getContext().getResources().getDisplayMetrics();
-                int xBoundLeft = boundComputer.getLeftSide( y + (int)(mLineHeight /2) );
-                canvas.drawText( Float.toString( displayMetrics.density ), xBoundLeft, y, mTitlePaint );
-            }*/
-
                 break;
 
             case DENIED:

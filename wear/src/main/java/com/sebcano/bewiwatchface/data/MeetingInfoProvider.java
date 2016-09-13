@@ -111,8 +111,6 @@ public class MeetingInfoProvider {
         private AtomicReference<ArrayList<Meeting>> mLstMeetings;
         private ChangeListener mChangeListener;
 
-        private DateFormat mTimeFormat = new SimpleDateFormat("H:mm", Locale.getDefault());
-
         private static final String[] PROJECTION = {
                 CalendarContract.Instances.BEGIN,
                 CalendarContract.Instances.TITLE,
@@ -146,6 +144,13 @@ public class MeetingInfoProvider {
             final Cursor cursor = mContext.getContentResolver().query( calendarUri, PROJECTION, null, null, null );
 
             if (cursor != null) {
+                DateFormat timeFormat;
+                if ( android.text.format.DateFormat.is24HourFormat( mContext) ) {
+                    timeFormat = new SimpleDateFormat("H:mm", Locale.getDefault());
+                } else {
+                    timeFormat = new SimpleDateFormat("h:mm a", Locale.getDefault());
+                }
+
                 ArrayList<Meeting> lstAllDayMeetings = new ArrayList<>();
                 ArrayList<Meeting> lstInDayMeetings = new ArrayList<>();
                 while ( cursor.moveToNext() ) {
@@ -157,7 +162,7 @@ public class MeetingInfoProvider {
                         lstAllDayMeetings.add( new Meeting( instanceBegin, mContext.getString( idPrefixString ), instanceTitle ) );
                     } else {
                         Date startDate = new Date( instanceBegin );
-                        lstInDayMeetings.add( new Meeting( instanceBegin, mTimeFormat.format( startDate ), instanceTitle ));
+                        lstInDayMeetings.add( new Meeting( instanceBegin, timeFormat.format( startDate ), instanceTitle ));
                     }
                 }
                 cursor.close();
