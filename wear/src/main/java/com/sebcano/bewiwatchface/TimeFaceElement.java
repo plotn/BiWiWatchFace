@@ -5,9 +5,11 @@ import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.Typeface;
+import android.text.format.DateFormat;
 
 import java.util.Calendar;
 import java.util.Locale;
+import java.util.concurrent.ScheduledExecutorService;
 
 public class TimeFaceElement extends AbstractFaceElement {
     private static final String COLON_STRING = ":";
@@ -20,6 +22,8 @@ public class TimeFaceElement extends AbstractFaceElement {
     private float mColonHalfWidth;
     private float mColonHalfHeight;
     private float mDigitHalfHeight;
+
+    private boolean mIs24HourFormat;
 
     public TimeFaceElement( Context context) {
         super (context);
@@ -82,8 +86,14 @@ public class TimeFaceElement extends AbstractFaceElement {
     } );
 
     @Override
+    public void startSync( ScheduledExecutorService executor ) {
+        mIs24HourFormat = DateFormat.is24HourFormat( getContext() );
+    }
+
+    @Override
     public void drawTime( Canvas canvas, Calendar calendar, int x, int y) {
-        String szHour = mCachedHourString.getString( calendar.get(Calendar.HOUR_OF_DAY) );
+        int hourField = mIs24HourFormat ? Calendar.HOUR_OF_DAY : Calendar.HOUR;
+        String szHour = mCachedHourString.getString( calendar.get(hourField) );
         String szMinute = mCachedMinuteString.getString( calendar.get(Calendar.MINUTE) );
 
         float hourWidth = mHourPaint.measureText(szHour);
