@@ -21,6 +21,7 @@ import com.sebcano.bewiwatchface.R;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -141,6 +142,15 @@ public class MeetingInfoProvider {
             ContentUris.appendId( builder, now + DateUtils.DAY_IN_MILLIS);
             Uri calendarUri = builder.build();
 
+            Calendar calendar = Calendar.getInstance();
+            calendar.setTimeInMillis( now );
+            calendar.set( Calendar.HOUR_OF_DAY, 0 );
+            calendar.set( Calendar.MINUTE, 0 );
+            calendar.set( Calendar.SECOND, 0 );
+            calendar.set( Calendar.MILLISECOND, 0 );
+            calendar.add( Calendar.DAY_OF_YEAR, 1 );
+            long tomorrowStart = calendar.getTimeInMillis();
+
             final Cursor cursor = mContext.getContentResolver().query( calendarUri, PROJECTION, null, null, null );
 
             if (cursor != null) {
@@ -161,8 +171,13 @@ public class MeetingInfoProvider {
                         int idPrefixString = instanceBegin > now ? R.string.tomorrow : R.string.today;
                         lstAllDayMeetings.add( new Meeting( instanceBegin, mContext.getString( idPrefixString ), instanceTitle ) );
                     } else {
+                        String title = "";
+                        if (instanceBegin >= tomorrowStart ) {
+                            title += mContext.getString(R.string.tomorrow) + " ";
+                        }
                         Date startDate = new Date( instanceBegin );
-                        lstInDayMeetings.add( new Meeting( instanceBegin, timeFormat.format( startDate ), instanceTitle ));
+                        title += timeFormat.format( startDate );
+                        lstInDayMeetings.add( new Meeting( instanceBegin, title, instanceTitle ));
                     }
                 }
                 cursor.close();
