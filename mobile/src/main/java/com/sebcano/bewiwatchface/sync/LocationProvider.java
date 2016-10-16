@@ -3,23 +3,25 @@ package com.sebcano.bewiwatchface.sync;
 import android.location.Location;
 import android.os.HandlerThread;
 import android.os.Looper;
-import android.util.Log;
 
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
+import com.sebcano.bewiwatchface.AppInit;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.atomic.AtomicReference;
 
-import com.sebcano.bewiwatchface.AppInit;
-
 public class LocationProvider implements LocationListener {
 
-    private static final String TAG = "SBWWF LocationProvider";
+    static Logger log = LoggerFactory.getLogger("SBWWF LocationProvider");
+
     private static final double MAX_AGE_LAST_LOCATION_MILLIS = 60*60*1000;
 
-    private static final long UPDATE_INTERVAL_IN_MILLISECONDS = 10000;
+    private static final long UPDATE_INTERVAL_IN_MILLISECONDS = 5000;
     private static final long FASTEST_UPDATE_INTERVAL_IN_MILLISECONDS = UPDATE_INTERVAL_IN_MILLISECONDS / 2;
 
     private LocationRequest mLocationRequest;
@@ -29,10 +31,11 @@ public class LocationProvider implements LocationListener {
         try {
             AppInit.configureLocationApi( googleApiClient );
             Location lastLocation = LocationServices.FusedLocationApi.getLastLocation( googleApiClient );
-            Log.d( TAG, "getLocation: lastLocation=" + lastLocation );
-            boolean validLastLocation = ( lastLocation != null
-                    && ( (System.currentTimeMillis()-lastLocation.getTime()) < MAX_AGE_LAST_LOCATION_MILLIS) );
-            Log.d( TAG, "getLocation: validLastLocation=" + validLastLocation );
+            log.debug( "getLocation: lastLocation=" + lastLocation );
+
+            long lastLocationAgeMillis = System.currentTimeMillis() - lastLocation.getTime();
+            boolean validLastLocation = ( lastLocation != null && ( lastLocationAgeMillis < MAX_AGE_LAST_LOCATION_MILLIS) );
+            log.debug( "getLocation: lastLocationAge=" + (lastLocationAgeMillis/(1000*60)) + "min validLastLocation=" + validLastLocation );
             if (validLastLocation) {
                 return lastLocation;
             } else {
@@ -47,28 +50,33 @@ public class LocationProvider implements LocationListener {
                 handlerThread.start();
                 Looper looper = handlerThread.getLooper();
                 LocationServices.FusedLocationApi.requestLocationUpdates( googleApiClient, mLocationRequest, this, looper );
-                int i = 60;
-                while (i-->0 && mRequestLocation.get() == null) {
-                    Log.d( TAG, "getLocation: sleeping " + i );
-                    Thread.sleep( 1000 );
+                try {
+                    int i = 45; // Android SyncManager terminate thread after 60 seconds with no internet usage
+                    while ( i-- > 0 && mRequestLocation.get() == null ) {
+                        log.debug( "getLocation: sleeping " + i );
+                        Thread.sleep( 1000 );
+                    }
+                } catch (InterruptedException e) {
+                    log.warn( "getLocation: ", e );
+                    Thread.currentThread().interrupt();
                 }
                 handlerThread.quitSafely();
                 LocationServices.FusedLocationApi.removeLocationUpdates( googleApiClient, this );
-                Log.d( TAG, "getLocation: mRequestLocation=" + mRequestLocation.get() );
+                log.debug( "getLocation: mRequestLocation=" + mRequestLocation.get() );
                 Location requestLocation = mRequestLocation.get();
                 Location resLocation = requestLocation != null ? requestLocation : lastLocation;
-                Log.d( TAG, "getLocation: returning=" + resLocation );
+                log.debug( "getLocation: returning=" + resLocation );
                 return resLocation;
             }
-        } catch (InterruptedException | SecurityException e) {
-            Log.w( TAG, "getLocation: ", e );
+        } catch (SecurityException e) {
+            log.warn( "getLocation: ", e );
         }
         return null;
     }
 
     @Override
     public void onLocationChanged( Location location ) {
-        Log.d( TAG, "onLocationChanged: " + location );
+        log.debug( "onLocationChanged: " + location );
         mRequestLocation.set(location);
     }
 }

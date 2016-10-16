@@ -9,8 +9,8 @@ android {
         applicationId "com.sebcano.bewiwatchface"
         minSdkVersion 23
         targetSdkVersion 23
-        versionCode 3
-        versionName "0.3"
+        versionCode apkVersionCode.toInteger()
+        versionName apkVersionName
     }
     buildTypes {
         release {

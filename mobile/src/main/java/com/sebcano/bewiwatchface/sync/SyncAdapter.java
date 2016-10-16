@@ -11,7 +11,6 @@ import android.database.Cursor;
 import android.location.Location;
 import android.net.Uri;
 import android.os.Bundle;
-import android.util.Log;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -19,10 +18,18 @@ import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.wearable.PutDataMapRequest;
 import com.google.android.gms.wearable.PutDataRequest;
 import com.google.android.gms.wearable.Wearable;
+import com.sebcano.bewiwatchface.AppInit;
+import com.sebcano.bewiwatchface.BuildConfig;
+import com.sebcano.bewiwatchface.common.model.ForecastLocation;
+import com.sebcano.bewiwatchface.common.model.ForecastSlice;
+import com.sebcano.bewiwatchface.data.WeatherContract.LocationEntry;
+import com.sebcano.bewiwatchface.data.WeatherContract.WeatherEntry;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
@@ -31,21 +38,13 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
 
-import com.sebcano.bewiwatchface.AppInit;
-import com.sebcano.bewiwatchface.BuildConfig;
-import com.sebcano.bewiwatchface.common.model.ForecastLocation;
-import com.sebcano.bewiwatchface.common.model.ForecastSlice;
-import com.sebcano.bewiwatchface.data.WeatherContract.LocationEntry;
-import com.sebcano.bewiwatchface.data.WeatherContract.WeatherEntry;
-
 /**
  * Handle the transfer of data between a server and an
  * app, using the Android sync adapter framework.
  */
 public class SyncAdapter extends AbstractThreadedSyncAdapter {
 
-    private static final String TAG = "SBWWF SyncAdapter";
-
+    static Logger log = LoggerFactory.getLogger("SBWWF SyncAdapter");
 
     // Define a variable to contain a content resolver instance
     ContentResolver mContentResolver;
@@ -81,21 +80,29 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
 
     @Override
     public void onPerformSync( Account account, Bundle extras, String authority, ContentProviderClient provider, SyncResult syncResult ) {
-        AppInit.onStartup(getContext());
-        Log.d( TAG, "onPerformSync" );
-        GoogleApiClient googleApiClient = new GoogleApiClient.Builder( getContext() )
-                .addApi( LocationServices.API )
-                .addApi( Wearable.API )
-                .build();
-        ConnectionResult connectionResult = googleApiClient.blockingConnect();
-        if (connectionResult.isSuccess()) {
-            LocationProvider locationProvider = new LocationProvider();
-            Location location = locationProvider.getLocation( googleApiClient );
-            long locId = fetchWeather( location );
-            sendWeatherToWatch(locId, location, googleApiClient);
-        }
+        log.debug( "onPerformSync" );
+        syncResult.clear();
+        try {
+            AppInit.onStartup( getContext() );
 
-        googleApiClient.disconnect();
+            GoogleApiClient googleApiClient = new GoogleApiClient.Builder( getContext() )
+                    .addApi( LocationServices.API )
+                    .addApi( Wearable.API )
+                    .build();
+            ConnectionResult connectionResult = googleApiClient.blockingConnect();
+            if ( connectionResult.isSuccess() ) {
+                log.debug( "onPerformSync connected" );
+                LocationProvider locationProvider = new LocationProvider();
+                Location location = locationProvider.getLocation( googleApiClient );
+                long locId = fetchWeather( location );
+                sendWeatherToWatch( locId, location, googleApiClient );
+            }
+
+            googleApiClient.disconnect();
+            log.debug( "onPerformSync completed" );
+        } catch ( Throwable e ) {
+            log.error( "onPerformSync", e );
+        }
     }
 
     private long fetchWeather( Location location ) {
@@ -115,7 +122,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
                 .appendQueryParameter( "cnt", Integer.toString( NUM_REPORTS ) )
                 .appendQueryParameter( "appid", BuildConfig.OPEN_WEATHER_MAP_API_KEY )
                 .build();
-        Log.d( TAG, "fetchWeather: " + builtUri.toString().replace( BuildConfig.OPEN_WEATHER_MAP_API_KEY, "****" ) );
+        log.debug( "fetchWeather: " + builtUri.toString().replace( BuildConfig.OPEN_WEATHER_MAP_API_KEY, "****" ) );
 
         HttpURLConnection urlConnection = null;
 
@@ -135,15 +142,15 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
 
                 resJson = buffer.toString();
             } catch ( Exception e ) {
-                Log.e( TAG, "fetchWeather: ", e  );
+                log.error( "fetchWeather: ", e  );
             }
 
         } catch ( Exception e ) {
-            Log.e( TAG, "fetchWeather: ", e  );
+            log.error(  "fetchWeather: ", e  );
         } finally {
             if (urlConnection != null) urlConnection.disconnect();
         }
-        Log.d( TAG, "getWeatherJson: resJons=" + resJson);
+        log.debug( "getWeatherJson: resJons=" + resJson);
         return resJson;
     }
 
@@ -161,7 +168,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
             addLocation( cityId, cityName, cityLat, cityLon );
 
             JSONArray forecastJsonArray = json.getJSONArray( "list" );
-            Log.d( TAG, "parseWeatherJson: jsonarray.length=" + forecastJsonArray.length() );
+            log.debug( "parseWeatherJson: jsonarray.length=" + forecastJsonArray.length() );
             ContentValues tbCVForecast[] = new ContentValues[forecastJsonArray.length()];
             long now = System.currentTimeMillis();
             for (int i = 0; i<forecastJsonArray.length(); i++) {
@@ -185,7 +192,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
             String nowSeconds = Long.toString( System.currentTimeMillis() / 1000 );
             mContentResolver.delete( WeatherEntry.CONTENT_URI, WeatherEntry.COLUMN_DATE + "<= ?", new String[]{nowSeconds} );
         } catch ( JSONException e ) {
-            Log.e( TAG, "parseWeatherJson: ", e );
+            log.error( "parseWeatherJson: ", e );
         }
         return cityId;
     }
@@ -205,7 +212,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
         Cursor weatherCursor = mContentResolver.query( weatherAtLocation, null, null, null, null );
 
         if (weatherCursor != null) {
-            Log.d( TAG, "sendWeatherToWatch: cursor.getCount()=" + weatherCursor.getCount());
+            log.debug( "sendWeatherToWatch: cursor.getCount()=" + weatherCursor.getCount());
             if (weatherCursor.getCount() > 0) {
                 final int idxDate = weatherCursor.getColumnIndex( WeatherEntry.COLUMN_DATE );
                 final int idxConditionId = weatherCursor.getColumnIndex( WeatherEntry.COLUMN_WEATHER_ID );
@@ -255,7 +262,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
                     JSONObject sentJson = new JSONObject();
                     sentJson.put( "weather", forecastJsonArray );
                     sentJson.put( "location", forecastLocation.toJSONObject() );
-                    Log.d( TAG, "sendWeatherToWatch: json" + sentJson.toString() );
+                    log.debug( "sendWeatherToWatch: json" + sentJson.toString() );
 
                     PutDataMapRequest putDataMapRequest = PutDataMapRequest.create( "/weather" );
                     putDataMapRequest.getDataMap().putString( "json", sentJson.toString() );
@@ -264,7 +271,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
                     Wearable.DataApi.putDataItem( googleApiClient, request );
 
                 } catch ( JSONException e ) {
-                    Log.e( TAG, "sendWeatherToWatch: ", e );
+                    log.error( "sendWeatherToWatch: ", e );
                 }
             }
 

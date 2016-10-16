@@ -9,14 +9,15 @@ android {
         applicationId "com.sebcano.bewiwatchface"
         minSdkVersion 19
         targetSdkVersion 23
-        versionCode 3
-        versionName "0.3"
+        versionCode apkVersionCode.toInteger()
+        versionName apkVersionName
     }
     buildTypes {
         release {
             minifyEnabled true
             shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+
         }
     }
     buildTypes.each {
@@ -33,6 +34,9 @@ dependencies {
     compile 'com.android.support:appcompat-v7:23.4.0'
     compile 'com.google.android.gms:play-services-location:8.4.0'
     compile 'com.google.android.gms:play-services-wearable:8.4.0'
+    compile 'org.slf4j:slf4j-api:1.7.21'
+    compile 'com.github.tony19:logback-android-core:1.1.1-6'
+    compile 'com.github.tony19:logback-android-classic:1.1.1-6'
     debugCompile 'com.facebook.stetho:stetho:1.3.1'
     compile project(':common')
 }

@@ -5,17 +5,15 @@ import android.location.Location;
 import android.location.LocationManager;
 import android.util.Log;
 
-import com.facebook.stetho.Stetho;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationServices;
-
 import com.sebcano.bewiwatchface.debug.MockLocationProvider;
 
 public class AppInit {
     private static final String TAG = AppInit.class.getSimpleName();
 
     public static void onStartup(Context context) {
-        Stetho.initializeWithDefaults(context);
+        //Stetho.initializeWithDefaults(context);
     }
 
     public static void configureLocationApi( GoogleApiClient googleApiClient ) {

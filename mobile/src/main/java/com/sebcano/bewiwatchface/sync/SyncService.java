@@ -7,7 +7,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.IBinder;
-import android.util.Log;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Define a Service that returns an IBinder for the
@@ -15,8 +17,9 @@ import android.util.Log;
  * onPerformSync().
  */
 public class SyncService extends Service {
-    private static final String TAG = SyncService.class.getSimpleName();
-    
+
+    static Logger log = LoggerFactory.getLogger("SBWWF SyncService");
+
     // Storage for an instance of the sync adapter
     private static SyncAdapter sSyncAdapter = null;
 
@@ -63,7 +66,7 @@ public class SyncService extends Service {
     public static final long SYNC_INTERVAL_IN_SECONDS = 2*60*60; // Minimun seems to be 60 seconds
 
     public static void startSyncing(Context context) {
-        Log.d( TAG, "startSyncing: " );
+        log.debug( "startSyncing: " );
         Account account = Authenticator.getSyncAccount( context );
         startSyncing( account );
     }
@@ -74,7 +77,7 @@ public class SyncService extends Service {
     }
 
     public static void syncNow( Context context ) {
-        Log.d( TAG, "syncNow: " );
+        log.debug( ">>> syncNow" );
         Account account = Authenticator.getSyncAccount( context );
 
         // Pass the settings flags by inserting them in a bundle
@@ -87,5 +90,6 @@ public class SyncService extends Service {
          * manual sync settings
          */
         ContentResolver.requestSync(account, AUTHORITY, settingsBundle);
+        log.debug( "<<< syncNow" );
     }
 }
