@@ -33,10 +33,7 @@ public class LocationProvider implements LocationListener {
             Location lastLocation = LocationServices.FusedLocationApi.getLastLocation( googleApiClient );
             log.debug( "getLocation: lastLocation=" + lastLocation );
 
-            long lastLocationAgeMillis = System.currentTimeMillis() - lastLocation.getTime();
-            boolean validLastLocation = ( lastLocation != null && ( lastLocationAgeMillis < MAX_AGE_LAST_LOCATION_MILLIS) );
-            log.debug( "getLocation: lastLocationAge=" + (lastLocationAgeMillis/(1000*60)) + "min validLastLocation=" + validLastLocation );
-            if (validLastLocation) {
+            if ( isLastLocationValid( lastLocation ) ) {
                 return lastLocation;
             } else {
                 mLocationRequest = new LocationRequest();
@@ -78,5 +75,17 @@ public class LocationProvider implements LocationListener {
     public void onLocationChanged( Location location ) {
         log.debug( "onLocationChanged: " + location );
         mRequestLocation.set(location);
+    }
+
+    private boolean isLastLocationValid( Location lastLocation ) {
+        if (lastLocation == null) {
+            log.debug( "isLastLocationValid: lastLocation=null" );
+            return false;
+        }
+
+        long lastLocationAgeMillis = System.currentTimeMillis() - lastLocation.getTime();
+        boolean validLastLocation = lastLocationAgeMillis < MAX_AGE_LAST_LOCATION_MILLIS;
+        log.debug( "getLocation: lastLocationAge=" + (lastLocationAgeMillis/(1000*60)) + "min validLastLocation=" + validLastLocation );
+        return validLastLocation;
     }
 }

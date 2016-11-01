@@ -169,7 +169,10 @@ public class MeetingInfoProvider {
                     long instanceBegin = cursor.getLong( COL_INSTANCE_BEGIN );
                     if ( isAllDay ) {
                         int idPrefixString = instanceBegin > now ? R.string.tomorrow : R.string.today;
-                        lstAllDayMeetings.add( new Meeting( instanceBegin, mContext.getString( idPrefixString ), instanceTitle ) );
+                        Meeting meeting = new Meeting( instanceBegin, mContext.getString( idPrefixString ), instanceTitle );
+                        if (! lstAllDayMeetings.contains( meeting )) {
+                            lstAllDayMeetings.add( meeting );
+                        }
                     } else {
                         String title = "";
                         if (instanceBegin >= tomorrowStart ) {
@@ -177,7 +180,10 @@ public class MeetingInfoProvider {
                         }
                         Date startDate = new Date( instanceBegin );
                         title += timeFormat.format( startDate );
-                        lstInDayMeetings.add( new Meeting( instanceBegin, title, instanceTitle ));
+                        Meeting meeting = new Meeting( instanceBegin, title, instanceTitle );
+                        if (!lstInDayMeetings.contains( meeting )) {
+                            lstInDayMeetings.add( meeting );
+                        }
                     }
                 }
                 cursor.close();
