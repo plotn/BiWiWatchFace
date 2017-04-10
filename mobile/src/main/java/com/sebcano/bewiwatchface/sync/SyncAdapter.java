@@ -115,7 +115,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
 
         final int NUM_REPORTS = 3 /* days */ * 24 /* h */ / 3 /* h/report */;
 
-        Uri builtUri = Uri.parse("http://api.openweathermap.org/data/2.5/forecast/forecast?").buildUpon()
+        Uri builtUri = Uri.parse("http://api.openweathermap.org/data/2.5/forecast?").buildUpon()
                 .appendQueryParameter( "lat", Double.toString( location.getLatitude() ) )
                 .appendQueryParameter( "lon", Double.toString( location.getLongitude() ) )
                 .appendQueryParameter( "units", "metric" )
