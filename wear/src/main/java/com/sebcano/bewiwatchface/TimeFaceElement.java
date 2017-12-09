@@ -92,8 +92,14 @@ public class TimeFaceElement extends AbstractFaceElement {
 
     @Override
     public void drawTime( Canvas canvas, Calendar calendar, int x, int y) {
-        int hourField = mIs24HourFormat ? Calendar.HOUR_OF_DAY : Calendar.HOUR;
-        String szHour = mCachedHourString.getString( calendar.get(hourField) );
+        int hour;
+        if (mIs24HourFormat) {
+            hour = calendar.get(Calendar.HOUR_OF_DAY);
+        } else {
+            hour = calendar.get(Calendar.HOUR);
+            if (hour ==0) hour = 12;
+        }
+        String szHour = mCachedHourString.getString( hour );
         String szMinute = mCachedMinuteString.getString( calendar.get(Calendar.MINUTE) );
 
         float hourWidth = mHourPaint.measureText(szHour);
